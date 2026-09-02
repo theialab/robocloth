@@ -26,9 +26,10 @@ from typing import Dict, List, Optional, Tuple
 import psutil
 import pynvml
 
-# Make registration_check importable regardless of CWD
+# Make registration_check / quality_check (siblings of this file) importable
+# regardless of CWD
 _SCHEDULER_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(_SCHEDULER_DIR.parent / "calibration"))
+sys.path.insert(0, str(_SCHEDULER_DIR))
 from registration_check import (  # noqa: E402
     registration_ratio,
     is_well_registered,
@@ -53,10 +54,16 @@ class Config:
     MATERIAL_SCAN_INTERVAL_SEC = 30  # How often to scan for new materials in auto mode
     STATE_FILE_NAME = "scheduler_state.json"  # State file name (saved in dataset folder)
 
-    # COLMAP writes tmp files to COLMAP_TMP_BASE (mirrors TMP_BASE in colmap.sh).
-    # Require at least MIN_FREE_DISK_GB free before launching a new COLMAP job,
-    # so disk-full failures can't take down the whole batch mid-flight.
-    COLMAP_TMP_BASE = "/mnt/colmap_tmp"
+    # COLMAP stages a local copy of ldr/ plus its outputs under COLMAP_TMP_BASE.
+    # launch_colmap() exports it to the scripts as COLMAP_TMP, so the disk gate
+    # below measures the filesystem they actually write to. Precedence:
+    # $COLMAP_TMP, then the production loop device /mnt/colmap_tmp if it
+    # exists, else the scripts' own default. Require at least MIN_FREE_DISK_GB
+    # free before launching a new COLMAP job, so disk-full failures can't take
+    # down the whole batch mid-flight (the scripts remove their staging dir on
+    # every exit path, success or failure).
+    COLMAP_TMP_BASE = os.environ.get("COLMAP_TMP") or (
+        "/mnt/colmap_tmp" if os.path.isdir("/mnt/colmap_tmp") else "/tmp/robocloth_colmap")
     MIN_FREE_DISK_GB = 20.0
 
     # Paths
@@ -538,6 +545,33 @@ def fix_material_status_by_timestamps(info: Dict, material: str, verbose: bool =
     
     return False
 
+def archive_rejected_sparse(folder_path: str, log_prefix: str = "  ") -> Optional[str]:
+    """
+    Move <folder>/sparse aside as sparse_seq_failed-<YYYYmmdd-HHMMSS> before an
+    exhaustive COLMAP retry. Never deletes anything: earlier archives (including
+    a legacy unsuffixed sparse_seq_failed/) survive, and a same-second clash gets
+    a numeric suffix — mirroring the sparse.prev-<ts> dirs colmap.sh keeps.
+
+    Returns the archive path, or None if there was no sparse/ to archive or the
+    rename failed (a warning is printed; the caller proceeds either way).
+    """
+    sparse_dir = os.path.join(folder_path, "sparse")
+    if not os.path.isdir(sparse_dir):
+        return None
+    stamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    backup_dir = os.path.join(folder_path, f"sparse_seq_failed-{stamp}")
+    n = 1
+    while os.path.exists(backup_dir):
+        backup_dir = os.path.join(folder_path, f"sparse_seq_failed-{stamp}-{n}")
+        n += 1
+    try:
+        os.rename(sparse_dir, backup_dir)
+    except OSError as e:
+        print(f"{log_prefix}WARNING: could not archive {sparse_dir} -> {backup_dir}: {e}")
+        return None
+    return backup_dir
+
+
 def verify_completed_materials(state: Dict, verbose: bool = True, skip_list: Optional[set] = None) -> Tuple[int, int]:
     """
     Sanity-check every COMPLETED material on scheduler restart and reset the
@@ -596,17 +630,9 @@ def verify_completed_materials(state: Dict, verbose: bool = True, skip_list: Opt
                 print(f"  Sanity check material {material}: registration {n_reg}/{n_scans} "
                       f"({ratio*100:.1f}%) below {REGISTRATION_THRESHOLD*100:.0f}% "
                       f"→ reset for exhaustive COLMAP")
-            # Archive the bad sparse so the exhaustive run starts clean
-            sparse_dir = os.path.join(folder_path, "sparse")
-            backup_dir = os.path.join(folder_path, "sparse_seq_failed")
-            if os.path.isdir(sparse_dir):
-                try:
-                    if os.path.isdir(backup_dir):
-                        import shutil
-                        shutil.rmtree(backup_dir)
-                    os.rename(sparse_dir, backup_dir)
-                except Exception as e:
-                    print(f"    WARNING: could not archive {sparse_dir}: {e}")
+            # Archive the bad sparse (timestamped, never deleted) so the
+            # exhaustive run starts clean
+            archive_rejected_sparse(folder_path, log_prefix="    ")
             info["status"] = JobStatus.NOT_STARTED
             info["colmap_variant"] = "exhaustive"
             info["colmap_start_time"] = None
@@ -935,12 +961,57 @@ def initialize_materials(dataset_root: str, state: Dict, verbose: bool = True, r
 
 # ==================== Job Launchers ====================
 
+# Popen handles of every job launched by *this* scheduler process, keyed by
+# pid, so update_job_status() can read the real exit status back instead of
+# inferring success from log lines alone. Jobs inherited from a previous
+# scheduler process (via the state file) have no handle here — see
+# child_exit_status().
+_CHILD_PROCESSES: Dict[int, subprocess.Popen] = {}
+
+
+def spawn_logged_job(cmd: List[str], log_file: str, env: Optional[Dict[str, str]] = None) -> subprocess.Popen:
+    """
+    Launch `cmd` detached (own session) with stdout+stderr redirected to
+    `log_file` and remember the Popen handle for child_exit_status().
+
+    `cmd` must be an argv list — never a shell string — so material paths are
+    passed verbatim without shell interpolation.
+    """
+    if isinstance(cmd, (str, bytes)) or not all(isinstance(c, str) for c in cmd):
+        raise TypeError(f"cmd must be a list of str, got {cmd!r}")
+    with open(log_file, 'w') as f:
+        process = subprocess.Popen(
+            list(cmd),
+            env=env,
+            stdout=f,
+            stderr=subprocess.STDOUT,
+            start_new_session=True  # Detach from parent
+        )
+    _CHILD_PROCESSES[process.pid] = process
+    return process
+
+
+def child_exit_status(pid: Optional[int]) -> Optional[int]:
+    """
+    Exit status of a job launched by spawn_logged_job(): None while it is
+    still running or when it was launched by a previous scheduler process
+    (unknown); otherwise the status (negative = killed by that signal).
+    Polling also reaps the zombie, so is_process_alive() then reports it dead.
+    """
+    if pid is None:
+        return None
+    process = _CHILD_PROCESSES.get(pid)
+    if process is None:
+        return None
+    return process.poll()
+
+
 def launch_colmap(material: str, folder_path: str, gpu_id: int, state: Dict, config: Config) -> Optional[int]:
     """
     Launch COLMAP reconstruction for a material.
     Picks the matcher script based on state["materials"][material]["colmap_variant"]:
-      - "sequential" (default): recon/colmap/colmap.sh
-      - "exhaustive": recon/colmap/colmap_exhaustive.sh
+      - "sequential" (default): colmap.sh
+      - "exhaustive": colmap_exhaustive.sh
     Returns: Process PID or None on failure
     """
     try:
@@ -956,6 +1027,9 @@ def launch_colmap(material: str, folder_path: str, gpu_id: int, state: Dict, con
         env = os.environ.copy()
         env["OMP_NUM_THREADS"] = str(config.CPU_CORES_PER_COLMAP)
         env["MKL_NUM_THREADS"] = str(config.CPU_CORES_PER_COLMAP)
+        # Staging base for the script — the same filesystem check_disk_capacity()
+        # measures (see Config.COLMAP_TMP_BASE).
+        env["COLMAP_TMP"] = config.COLMAP_TMP_BASE
 
         # Launch COLMAP script with physical GPU ID
         # The script will set CUDA_VISIBLE_DEVICES for each colmap command
@@ -963,14 +1037,7 @@ def launch_colmap(material: str, folder_path: str, gpu_id: int, state: Dict, con
 
         # Redirect output to log file
         log_file = os.path.join(folder_path, "colmap.log")
-        with open(log_file, 'w') as f:
-            process = subprocess.Popen(
-                cmd,
-                env=env,
-                stdout=f,
-                stderr=subprocess.STDOUT,
-                start_new_session=True  # Detach from parent
-            )
+        process = spawn_logged_job(cmd, log_file, env=env)
 
         print(f"[{datetime.now().strftime('%H:%M:%S')}] Launched COLMAP ({variant}) for material {material} on GPU {gpu_id} (PID: {process.pid})")
 
@@ -1007,13 +1074,7 @@ def launch_shape_matching(material: str, folder_path: str, num_workers: int, sta
         
         # Redirect output to log file
         log_file = os.path.join(folder_path, "shape_matching.log")
-        with open(log_file, 'w') as f:
-            process = subprocess.Popen(
-                cmd,
-                stdout=f,
-                stderr=subprocess.STDOUT,
-                start_new_session=True
-            )
+        process = spawn_logged_job(cmd, log_file)
         
         print(f"[{datetime.now().strftime('%H:%M:%S')}] Launched shape matching for material {material} with {num_workers} workers (PID: {process.pid})")
         
@@ -1032,6 +1093,117 @@ def launch_shape_matching(material: str, folder_path: str, num_workers: int, sta
         return None
 
 # ==================== Job Monitoring ====================
+
+# Marker lines written by colmap.sh / colmap_exhaustive.sh at the end of colmap.log
+COLMAP_FINISHED_MARKER = "== Finished COLMAP reconstruction =="
+COLMAP_FAILED_MARKER = "== FAILED:"  # "== FAILED: stage=<name> exit=<code> ==" (EXIT trap)
+
+
+def _log_tail(log_file: str, n: int = 20) -> List[str]:
+    """Last n lines of a log file ([] if missing/unreadable)."""
+    if not os.path.exists(log_file):
+        return []
+    try:
+        with open(log_file, 'r', errors='ignore') as f:
+            return f.readlines()[-n:]
+    except (IOError, OSError):
+        return []
+
+
+def read_colmap_failure(folder_path: str) -> Optional[str]:
+    """
+    Return the "== FAILED: stage=<name> exit=<code> ==" line the COLMAP
+    scripts' EXIT trap writes to colmap.log, or None if absent.
+    """
+    log_file = os.path.join(folder_path, "colmap.log")
+    for line in reversed(_log_tail(log_file)):
+        if COLMAP_FAILED_MARKER in line:
+            return line.strip()
+    return None
+
+
+def _output_newer_than(path: str, start_time_iso: Optional[str]) -> bool:
+    """True if `path` exists and was modified after the ISO timestamp (or if no timestamp is known)."""
+    if not os.path.exists(path):
+        return False
+    if not start_time_iso:
+        return True
+    try:
+        start = datetime.fromisoformat(start_time_iso).timestamp()
+    except (TypeError, ValueError):
+        return True
+    return os.path.getmtime(path) >= start - 1.0  # 1 s slack for coarse mtimes
+
+
+def _marker_exit_code(marker_line: Optional[str]) -> Optional[int]:
+    """The N of a '== FAILED: stage=<s> exit=N ==' marker line (None if absent/unparseable)."""
+    if not marker_line or "exit=" not in marker_line:
+        return None
+    try:
+        return int(marker_line.split("exit=", 1)[1].split()[0])
+    except ValueError:
+        return None
+
+
+def _signal_of(status: Optional[int]) -> Optional[int]:
+    """
+    Signal number behind an exit status, or None for a normal exit: Popen's
+    negative status (the script itself was killed), or the 128+N status the
+    scripts report when their INT/TERM trap fired or a COLMAP stage was killed
+    by signal N (`set -e` propagates the child's 128+N).
+    """
+    if status is None:
+        return None
+    if status < 0:
+        return -status
+    if status > 128:
+        return status - 128
+    return None
+
+
+def classify_colmap_exit(folder_path: str, returncode: Optional[int],
+                         start_time_iso: Optional[str] = None) -> Tuple[str, str]:
+    """
+    Decide how a COLMAP run that is no longer running ended. Fail-closed: the
+    run only counts as successful on an explicit success signal.
+
+    `returncode` is child_exit_status(pid) — None when unknown (job launched
+    by a previous scheduler process). Returns (outcome, reason), outcome one of
+      "ok"       – colmap.sh published a validated model: exit 0 or the finished
+                   marker, or (status unknown, no markers) sparse/points3D.ply
+                   written after this run started
+      "failed"   – the script itself failed closed (nonzero exit / FAILED
+                   marker); nothing was published, sparse/ is as it was
+      "vanished" – no verdict on the material: killed by a signal (negative
+                   status, or the 128+N status / "exit=1xx" marker the script's
+                   INT/TERM trap reports), or died without any marker. Such a
+                   run is not retried with the exhaustive matcher.
+    """
+    failure = read_colmap_failure(folder_path)
+    status = returncode if returncode is not None else _marker_exit_code(failure)
+    sig = _signal_of(status)
+    if sig is not None:
+        reason = f"killed by signal {sig}"
+        if status > 0:  # 128+N reported by the script, so its marker names the stage
+            reason += f" (exit status {status})"
+            if failure:
+                reason += f" — {failure}"
+        return "vanished", reason
+    if returncode is not None and returncode != 0:
+        return "failed", failure or f"COLMAP script exited with status {returncode}"
+    if failure:
+        return "failed", failure
+    if check_colmap_completion(folder_path):
+        return "ok", "completion marker in colmap.log"
+    if returncode == 0:
+        return "ok", "exit status 0"
+    # Exit status unknown and no marker: accept the published output only if
+    # this run wrote it (a fail-closed run leaves any older sparse/ in place).
+    ply = os.path.join(folder_path, "sparse", "points3D.ply")
+    if _output_newer_than(ply, start_time_iso):
+        return "ok", "detected via output file"
+    return "vanished", "process died without completion"
+
 
 def check_colmap_completion(folder_path: str) -> bool:
     """
@@ -1112,10 +1284,12 @@ def evaluate_colmap_registration(material: str, info: Dict) -> Tuple[bool, str]:
                         with colmap_variant="exhaustive" (sequential→exhaustive retry),
                         OR mark FAILED if exhaustive already happened.
 
-    Side-effect: archives the bad sparse/ dir to sparse_seq_failed/ on the first
-    failure so the next exhaustive run starts clean. The colmap_exhaustive.sh
-    script also does this defensively, but doing it here means the state is
-    self-consistent even if a job is killed before re-launch.
+    Side-effect: on the first (sequential) failure the rejected sparse/ dir is
+    moved aside to sparse_seq_failed-<timestamp> (archive_rejected_sparse) so
+    the exhaustive retry starts clean. Nothing is ever deleted. The wrapper
+    scripts now fail closed themselves (a below-threshold model is never
+    published), so this path is normally only reached for a sparse/ that was
+    published under a different COLMAP_REGISTRATION_THRESHOLD.
     """
     folder_path = info["folder_path"]
     n_reg, n_scans, ratio = registration_ratio(folder_path)
@@ -1133,17 +1307,9 @@ def evaluate_colmap_registration(material: str, info: Dict) -> Tuple[bool, str]:
     msg = f"registered {n_reg}/{n_scans} ({ratio*100:.1f}%) below threshold {REGISTRATION_THRESHOLD*100:.0f}%"
 
     if variant == "sequential":
-        # Archive the failed sparse dir so the exhaustive retry won't see stale data.
-        sparse_dir = os.path.join(folder_path, "sparse")
-        backup_dir = os.path.join(folder_path, "sparse_seq_failed")
-        if os.path.isdir(sparse_dir):
-            try:
-                if os.path.isdir(backup_dir):
-                    import shutil
-                    shutil.rmtree(backup_dir)
-                os.rename(sparse_dir, backup_dir)
-            except Exception as e:
-                print(f"  WARNING: could not archive {sparse_dir} -> {backup_dir}: {e}")
+        # Archive the rejected sparse dir (timestamped, never deleted) so the
+        # exhaustive retry won't see stale data.
+        archive_rejected_sparse(folder_path, log_prefix="  ")
         return False, msg + " — will retry with exhaustive matcher"
 
     # Already tried exhaustive and still bad — give up.
@@ -1167,28 +1333,19 @@ def update_job_status(state: Dict, config: Config):
             
             # If completed OR process is dead, check final status
             if colmap_completed or not process_alive:
-                # Did the *script* finish (either via log marker or output file)?
-                script_finished = False
-                if colmap_completed:
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] COLMAP completed for material {material}")
-                    script_finished = True
-                else:
-                    sparse_path = os.path.join(folder_path, "sparse", "points3D.ply")
-                    if os.path.exists(sparse_path):
-                        print(f"[{datetime.now().strftime('%H:%M:%S')}] COLMAP completed for material {material} (detected via output file)")
-                        script_finished = True
-                    else:
-                        print(f"[{datetime.now().strftime('%H:%M:%S')}] COLMAP failed for material {material} (process died, no completion flag)")
-                        terminate_process(pid, material, "COLMAP")
-                        info["status"] = JobStatus.FAILED
-                        info["error"] = "COLMAP process died without completion"
-                        info["pid"] = None
-                        info["gpu"] = None
+                # The exit status is known for children of this scheduler
+                # process; otherwise classify_colmap_exit() falls back to the
+                # markers the COLMAP scripts write to colmap.log.
+                returncode = child_exit_status(pid)
+                outcome, reason = classify_colmap_exit(folder_path, returncode, info.get("colmap_start_time"))
+                ts = datetime.now().strftime('%H:%M:%S')
+                variant = info.get("colmap_variant", "sequential")
+                terminate_process(pid, material, "COLMAP")
+                info["pid"] = None
+                info["gpu"] = None
 
-                if script_finished:
-                    terminate_process(pid, material, "COLMAP")
-                    info["pid"] = None
-                    info["gpu"] = None
+                if outcome == "ok":
+                    print(f"[{ts}] COLMAP completed for material {material} ({reason})")
                     info["colmap_end_time"] = datetime.now().isoformat()
 
                     # Registration health gate: low registration triggers an
@@ -1199,7 +1356,6 @@ def update_job_status(state: Dict, config: Config):
                         print(f"  → {reason}")
                         info["status"] = JobStatus.COLMAP_DONE
                     else:
-                        variant = info.get("colmap_variant", "sequential")
                         if variant == "sequential":
                             print(f"  → {reason}")
                             print(f"  → resetting material {material} for exhaustive COLMAP retry")
@@ -1212,6 +1368,26 @@ def update_job_status(state: Dict, config: Config):
                             print(f"  → {reason}")
                             info["status"] = JobStatus.FAILED
                             info["error"] = f"Low COLMAP registration after exhaustive retry: {reason}"
+                elif outcome == "failed" and variant == "sequential":
+                    # colmap.sh failed closed (a COLMAP stage errored or the
+                    # staged model failed validation) and published nothing, so
+                    # sparse/ is as it was. Same policy as a low-registration
+                    # result: one exhaustive retry.
+                    print(f"[{ts}] COLMAP failed for material {material}: {reason}")
+                    print(f"  → resetting material {material} for exhaustive COLMAP retry")
+                    info["colmap_variant"] = "exhaustive"
+                    info["status"] = JobStatus.NOT_STARTED
+                    info["colmap_start_time"] = None
+                    info["colmap_end_time"] = None
+                    info["error"] = None
+                elif outcome == "failed":
+                    print(f"[{ts}] COLMAP failed for material {material}: {reason}")
+                    info["status"] = JobStatus.FAILED
+                    info["error"] = f"COLMAP failed after exhaustive retry: {reason}"
+                else:  # "vanished" — no verdict from the script
+                    print(f"[{ts}] COLMAP failed for material {material} ({reason})")
+                    info["status"] = JobStatus.FAILED
+                    info["error"] = f"COLMAP {reason}"
         
         elif info["status"] == JobStatus.SHAPE_MATCHING_RUNNING:
             folder_path = info["folder_path"]
@@ -1223,7 +1399,17 @@ def update_job_status(state: Dict, config: Config):
 
             # If completed OR process is dead, check final status
             if shape_completed or not process_alive:
-                if shape_completed:
+                returncode = child_exit_status(pid)
+                if returncode is not None and returncode != 0:
+                    # Fail closed: a known nonzero exit status wins over the log
+                    # marker and over partial output.
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] Shape matching failed for material {material} (reconstruct.py exited with status {returncode})")
+                    terminate_process(pid, material, "shape matching")
+                    info["status"] = JobStatus.FAILED
+                    info["error"] = f"Shape matching exited with status {returncode}"
+                    info["pid"] = None
+                    info["workers"] = None
+                elif shape_completed:
                     print(f"[{datetime.now().strftime('%H:%M:%S')}] Shape matching completed for material {material}")
                     terminate_process(pid, material, "shape matching")
                     info["status"] = JobStatus.COMPLETED

@@ -450,7 +450,7 @@ def main(cfg: DictConfig):
     print(f"Projected rotation center: {ROTATION_CENTER}")
     
     # image_folder = os.path.join(cfg.exp_folder, "ldr")
-    image_folder = "/media/raid/cloth/capture_data/BRDF_recon_Sep30_non_flat/ldr"
+    image_folder = "/absolute/path/to/material/ldr"   # example input folder
     output_folder = os.path.join(cfg.exp_folder, "masks")
     json_path = os.path.join(cfg.exp_folder, "scan_log.json")
 

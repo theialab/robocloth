@@ -17,6 +17,7 @@ Only NumPy & OpenCV (≥ 4.7 for AprilTag/Charuco) are required.
 """
 
 from __future__ import annotations
+import argparse
 import glob
 import sys
 from pathlib import Path
@@ -30,24 +31,24 @@ import json
 DICT_NAME  = cv2.aruco.DICT_4X4_50
 CU_COLS    = 11           # squares across (chessboard squares, not markers)
 CU_ROWS    = 8           # squares down
-CU_SQUARE  = 15       # square side length in meters
-CU_MARKER  = 11       # marker side length in meters
+CU_SQUARE  = 15       # square side length in mm (same units as the robot log / t_c2g)
+CU_MARKER  = 11       # marker side length in mm
 USE_LEGACY = True       # True if your PDF was generated with legacy pattern
 
-# Paths
+# Input paths (calibration images, turntable scans, robot logs) are CLI
+# arguments — see parse_args() at the bottom.
 
-CALIB_GLOB = "/media/raid/cloth/rot_axis/scans_0813_1/*.png"     # images for intrinsic calibration
-# TURN_GLOB  = "turn/*.png"    # legacy: images with board on the turn‑table
-SCANS1_GLOB = "/media/raid/cloth/rot_axis/scans_top_pattern/*.png"   # top‑pose scan images
-SCANS2_GLOB = "/media/raid/cloth/rot_axis/scans_tilt_pattern/*.png"   # tilt‑pose scan images
-SCAN_LOG_TOP = "/media/raid/cloth/rot_axis/scan_log_top.json"
-SCAN_LOG_TILT = "/media/raid/cloth/rot_axis/scan_log_tilt.json"
-
-# Hand–eye (camera → gripper) result
+# Hand–eye (camera → gripper) result, mm, expressed for the **OpenGL** camera
+# frame (x right, y up, z backward — the convention of
+# configs/renderer/rig_constants.yaml and reconstruction/reconstruct.py).
+# Override with --c2g_json; hand_eye.py --out writes the OpenCV convention and
+# says so in its "camera_convention" field (see load_camera_to_gripper).
 R_c2g = np.array([[-0.00369406,  0.99992083,  0.01202885],
                   [-0.00272167,  0.01201883, -0.99992407],
                   [-0.99998947, -0.00372652,  0.00267706]])
 t_c2g = np.array([36.68630125, -24.61733549, 27.64501449])
+BUILTIN_C2G_CONVENTION = "opengl"
+CAMERA_CONVENTIONS = ("opencv", "opengl")
 
 # ────────────────────── Helper functions ──────────────────────
 
@@ -72,6 +73,47 @@ def make_T(R: np.ndarray, t: np.ndarray) -> np.ndarray:
     T = np.eye(4, dtype=np.float64)
     T[:3, :3] = R
     T[:3, 3] = t
+    return T
+
+
+# OpenCV camera frame (x right, y down, z forward: solvePnP, COLMAP, hand_eye.py)
+# vs OpenGL camera frame (x right, y up, z backward: transforms.json,
+# rig_constants.yaml, the built-in constants above) differ by a 180° rotation
+# about the camera x axis. Right-multiplying a camera→X transform by T_CV2GL
+# re-expresses it for the other camera frame (an involution); the camera
+# centre, hence t_c2g, is the same in both.
+T_CV2GL = np.diag([1.0, -1.0, -1.0, 1.0])
+
+
+def load_camera_to_gripper(c2g_json: str | None = None, convention: str | None = None) -> np.ndarray:
+    """
+    Camera→gripper transform T_c2g (4×4, log units) expressed for the **OpenCV**
+    camera frame — the frame the solvePnP board poses live in, so that
+    ``T_board2base = T_g2b @ T_c2g @ T_board2cam`` holds without further flips.
+
+    c2g_json   : JSON with "R_c2g"/"t_c2g" (e.g. ``hand_eye.py --out``);
+                 None → the built-in constants above.
+    convention : "opencv" | "opengl" — the camera frame R_c2g is expressed in.
+                 None → the file's "camera_convention" field (written by
+                 hand_eye.py), else "opencv" for a JSON and "opengl" for the
+                 built-ins.
+    """
+    if c2g_json:
+        with open(c2g_json, "r") as f:
+            d = json.load(f)
+        R = np.asarray(d["R_c2g"], dtype=np.float64).reshape(3, 3)
+        t = np.asarray(d["t_c2g"], dtype=np.float64).reshape(3)
+        if convention is None:
+            convention = str(d.get("camera_convention", "opencv")).lower()
+    else:
+        R, t = R_c2g, t_c2g
+        if convention is None:
+            convention = BUILTIN_C2G_CONVENTION
+    if convention not in CAMERA_CONVENTIONS:
+        raise ValueError(f"camera convention must be one of {CAMERA_CONVENTIONS}, got {convention!r}")
+    T = make_T(R, t)
+    if convention == "opengl":
+        T = T @ T_CV2GL          # OpenGL-frame camera→gripper → OpenCV-frame camera→gripper
     return T
 
 
@@ -233,14 +275,18 @@ def save_charuco_debug(img_bgr: np.ndarray, out_path: str):
     cv2.imwrite(out_path, dbg)
 
 
-def main() -> None:
-    calib_imgs = sorted(glob.glob(CALIB_GLOB))
-    turn_imgs1 = sorted(glob.glob(SCANS1_GLOB))
-    turn_imgs2 = sorted(glob.glob(SCANS2_GLOB))
+def main(args: argparse.Namespace) -> None:
+    calib_imgs = sorted(glob.glob(args.calib_glob))
+    turn_imgs1 = sorted(glob.glob(args.top_glob)) if args.top_glob else []
+    turn_imgs2 = sorted(glob.glob(args.tilt_glob)) if args.tilt_glob else []
     if not calib_imgs:
-        sys.exit("No calibration images found – check CALIB_GLOB pattern.")
+        sys.exit("No calibration images found – check --calib_glob pattern.")
     if not turn_imgs1 and not turn_imgs2:
-        sys.exit("No turn‑table images found – check SCANS1_GLOB/SCANS2_GLOB patterns.")
+        sys.exit("No turn‑table images found – check --top_glob/--tilt_glob patterns.")
+    if turn_imgs1 and not args.scan_log_top:
+        sys.exit("--scan_log_top is required with --top_glob.")
+    if turn_imgs2 and not args.scan_log_tilt:
+        sys.exit("--scan_log_tilt is required with --tilt_glob.")
 
     K, D, rms = calibrate_intrinsics_charuco(calib_imgs)
 
@@ -248,21 +294,12 @@ def main() -> None:
     print("K:\n", K)
     print("Distortion D:", D.ravel())
     print(f"Mean reprojection error: {rms:.3f} px\n")
-    T_c2g = make_T(R_c2g, t_c2g)
-
-    # Axes conversion: OpenCV camera frame -> OpenGL camera frame (rotate 180° about X)
-    R_cv2gl = np.array([[1, 0, 0],
-                        [0,-1, 0],
-                        [0, 0,-1]], dtype=np.float64)
-    T_cv2gl = np.eye(4, dtype=np.float64); T_cv2gl[:3, :3] = R_cv2gl
-    T_c2g = T_c2g @ T_cv2gl
+    # camera→gripper for the OpenCV camera frame (the frame of the solvePnP board poses)
+    T_c2g = load_camera_to_gripper(args.c2g_json, args.c2g_convention)
     T_g2c = np.linalg.inv(T_c2g)
 
-    T_g2b_top  = load_robot_pose_from_scan_log(SCAN_LOG_TOP)
-    T_g2b_tilt = load_robot_pose_from_scan_log(SCAN_LOG_TILT)
-
-    T_c2b_top  = T_g2b_top  @ T_c2g
-    T_c2b_tilt = T_g2b_tilt @ T_c2g
+    T_c2b_top  = load_robot_pose_from_scan_log(args.scan_log_top)  @ T_c2g if turn_imgs1 else None
+    T_c2b_tilt = load_robot_pose_from_scan_log(args.scan_log_tilt) @ T_c2g if turn_imgs2 else None
 
     Rb_list: List[np.ndarray] = []
     pb_list: List[np.ndarray] = []
@@ -311,9 +348,32 @@ def main() -> None:
     print("=== Axis result ===")
     print("Axis direction d (unit):", d)
     print("Axis point c (base):   ", c)
-    print(f"Mean radius:           {r_mean:.4f} m")
-    print(f"Fit RMS residual:      {rms_fit:.4f} m\n")
+    print(f"Mean radius:           {r_mean:.4f} (log units, mm on our rig)")
+    print(f"Fit RMS residual:      {rms_fit:.4f} (log units, mm on our rig)\n")
+
+
+def parse_args(argv=None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="ChArUco intrinsic calibration + turntable-axis estimate from board poses "
+                    "seen by the robot-mounted camera at a fixed (top / tilt) gripper pose.")
+    parser.add_argument("--calib_glob", type=str, required=True,
+                        help="Glob of ChArUco images for intrinsic calibration, e.g. 'calib/*.png'")
+    parser.add_argument("--top_glob", type=str, default=None,
+                        help="Glob of turntable scans taken from the 'top' gripper pose")
+    parser.add_argument("--tilt_glob", type=str, default=None,
+                        help="Glob of turntable scans taken from the 'tilt' gripper pose")
+    parser.add_argument("--scan_log_top", type=str, default=None,
+                        help="Robot scan_log JSON of the 'top' pose (first entry is used); required with --top_glob")
+    parser.add_argument("--scan_log_tilt", type=str, default=None,
+                        help="Robot scan_log JSON of the 'tilt' pose (first entry is used); required with --tilt_glob")
+    parser.add_argument("--c2g_json", type=str, default=None,
+                        help="JSON with R_c2g/t_c2g (e.g. hand_eye.py --out) overriding the built-in hand–eye constants")
+    parser.add_argument("--c2g_convention", choices=CAMERA_CONVENTIONS, default=None,
+                        help="Camera-axis convention R_c2g is expressed in. Default: the JSON's 'camera_convention' "
+                             "field (hand_eye.py --out writes 'opencv'), 'opencv' for a JSON without it, "
+                             f"'{BUILTIN_C2G_CONVENTION}' for the built-in constants")
+    return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_args())

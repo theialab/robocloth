@@ -61,6 +61,24 @@ def T_about_point(R, p):
     T[:3, 3]  = (np.eye(3) - R) @ p
     return T
 
+def sample_pixels_nearest(img, px, py):
+    """
+    Nearest-pixel RGB lookup — the dataset's observation-sampling convention.
+
+    Sub-pixel projections (px, py) are rounded with np.round (IEEE
+    round-half-to-even: 1.49 -> 1, 1.5 -> 2, 2.5 -> 2), cast to int32 and
+    clipped to the image bounds; there is NO bilinear interpolation. Returns
+    img[y, x] with shape (M, C). Every released observations_structured.npz
+    was produced with exactly this lookup, so it must not be changed (a
+    bilinear variant would silently break parity with the released data).
+    See docs/capture_pipeline.md, step 5.
+    """
+    x_coords = np.round(px).astype(np.int32)
+    y_coords = np.round(py).astype(np.int32)
+    x_coords = np.clip(x_coords, 0, img.shape[1] - 1)
+    y_coords = np.clip(y_coords, 0, img.shape[0] - 1)
+    return img[y_coords, x_coords]
+
 # -------------------- your existing helpers (kept) --------------------
 
 def parse_colmap_images_txt(images):
@@ -632,14 +650,9 @@ def save_points_pixel_data(pcd_filtered, filtered_indices, images, points3D, hdr
         # Get pixel coordinates for this image's observations
         pixels = pixel_xy_array[obs_indices]  # (M, 2)
         
-        # Round and clip coordinates
-        x_coords = np.round(pixels[:, 0]).astype(np.int32)
-        y_coords = np.round(pixels[:, 1]).astype(np.int32)
-        x_coords = np.clip(x_coords, 0, hdr_img.shape[1] - 1)
-        y_coords = np.clip(y_coords, 0, hdr_img.shape[0] - 1)
-        
-        # Vectorized RGB sampling
-        rgb_array[obs_indices] = hdr_img[y_coords, x_coords]
+        # Vectorized RGB sampling — NEAREST pixel (np.round + clip), the
+        # convention the released dataset was built with; see sample_pixels_nearest.
+        rgb_array[obs_indices] = sample_pixels_nearest(hdr_img, pixels[:, 0], pixels[:, 1])
     
     # 7. Assemble final observations array
     observations = np.column_stack([
@@ -769,12 +782,10 @@ def _process_camera_batch(args):
         if len(valid_indices) == 0:
             continue
         
-        # Sample RGB for valid pixels (vectorized)
-        x_coords = np.round(pixels_x[valid_indices]).astype(np.int32)
-        y_coords = np.round(pixels_y[valid_indices]).astype(np.int32)
-        x_coords = np.clip(x_coords, 0, hdr_img.shape[1] - 1)
-        y_coords = np.clip(y_coords, 0, hdr_img.shape[0] - 1)
-        rgb_values = hdr_img[y_coords, x_coords]  # (M, 3)
+        # Sample RGB for valid pixels (vectorized) — NEAREST pixel (np.round +
+        # clip), the convention the released dataset was built with; see
+        # sample_pixels_nearest. Not bilinear.
+        rgb_values = sample_pixels_nearest(hdr_img, pixels_x[valid_indices], pixels_y[valid_indices])  # (M, 3)
         
         # Build observations for this camera (vectorized - NO FOR LOOP!)
         camera_observations = np.column_stack([
@@ -797,15 +808,19 @@ def _process_camera_batch(args):
             pcd = o3d.geometry.PointCloud()
             pcd.points = o3d.utility.Vector3dVector(xyz)
             pcd.colors = o3d.utility.Vector3dVector(rgbs)
-            o3d.io.write_point_cloud(f"/media/raid/cloth/output/visualizaitons_4/debug_points_base_img{first_img_id}.ply", pcd)
-            print(f"Saved debug point cloud to debug_points_base_img{first_img_id}.ply ({len(xyz)} points)")
+            _dbg = os.environ.get("ROBOCLOTH_DEBUG_DIR")  # opt-in debug dump
+            if _dbg:
+                os.makedirs(_dbg, exist_ok=True)
+                o3d.io.write_point_cloud(f"{_dbg}/debug_points_base_img{first_img_id}.ply", pcd)
+                print(f"Saved debug point cloud to {_dbg}/debug_points_base_img{first_img_id}.ply ({len(xyz)} points)")
             
             xyz = points_world[valid_indices]
             pcd = o3d.geometry.PointCloud()
             pcd.points = o3d.utility.Vector3dVector(xyz)
             pcd.colors = o3d.utility.Vector3dVector(rgbs)
-            o3d.io.write_point_cloud(f"/media/raid/cloth/output/visualizaitons_4/debug_points_world_img{first_img_id}.ply", pcd)
-            print(f"Saved debug point cloud to debug_points_world_img{first_img_id}.ply ({len(xyz)} points)")
+            if _dbg:
+                o3d.io.write_point_cloud(f"{_dbg}/debug_points_world_img{first_img_id}.ply", pcd)
+                print(f"Saved debug point cloud to {_dbg}/debug_points_world_img{first_img_id}.ply ({len(xyz)} points)")
     
     
     return batch_observations

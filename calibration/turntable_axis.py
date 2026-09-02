@@ -17,12 +17,18 @@ import os
 import re
 import json
 import argparse
+import sys
 import numpy as np
+from pathlib import Path
 from dataclasses import dataclass
 from numpy.linalg import svd, norm
 from scipy.optimize import least_squares
 
-# -------------------- External (from your repo) --------------------
+# -------------------- COLMAP model I/O (from this repository) --------------------
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_RECONSTRUCTION_DIR = _REPO_ROOT / "reconstruction"
+if str(_RECONSTRUCTION_DIR) not in sys.path:
+    sys.path.insert(0, str(_RECONSTRUCTION_DIR))
 from read_write_model import read_model, qvec2rotmat
 
 # -------------------- Calibration constants (yours) --------------------
