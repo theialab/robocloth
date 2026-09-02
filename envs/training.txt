@@ -1,10 +1,12 @@
-# Training / evaluation environment (validated recipe — see docs/training.md).
+# Training / evaluation environment (validated recipe — see docs/optimize_new_material.md and docs/train_decoder.md).
 # Install order matters:
 #   conda create -n robocloth python=3.10 -y && conda activate robocloth
 #   pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
 #   pip install -r envs/training.txt
 # For the UBO2014 comparison only:
 #   pip install Cython && pip install btf_extractor==1.7.0 --no-build-isolation
+huggingface_hub[hf_xet]
+poetry-core
 pytorch-lightning==1.9.5
 torchmetrics==1.8.2
 bitsandbytes==0.49.2

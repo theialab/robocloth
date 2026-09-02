@@ -1,0 +1,49 @@
+# Calibration + reconstruction environment (validated recipe — see docs/capture_pipeline.md).
+# Covers calibration/*.py, calibration/boards/*.py, reconstruction/*.py and
+# tests/{calibration,reconstruction}. Python 3.10–3.12 (every pin below supports
+# that range; colour-science's `<3.14` is the tightest). Validated with
+# Python 3.10.21 on Linux x86_64:
+#   conda create -p /absolute/path/to/envs/robocloth-calib python=3.10 -y
+#   conda activate /absolute/path/to/envs/robocloth-calib
+#   pip install -r envs/calibration.txt
+#
+# COLMAP 3.8 — a separate binary, needed by reconstruction/colmap.sh,
+# reconstruction/colmap_exhaustive.sh and scripts/reconstruct_material.sh
+# (subcommands used: feature_extractor, sequential_matcher / exhaustive_matcher,
+# mapper, model_converter). `colmap` must be on PATH and `colmap -h` should
+# print "COLMAP 3.8". Options:
+#   * build from source: https://github.com/colmap/colmap, tag 3.8 (CMake). The
+#     wrappers hand the GPU id to COLMAP through CUDA_VISIBLE_DEVICES; a CUDA
+#     build uses it, a CPU-only build ignores it and just runs slower (the
+#     CPU-only 3.8 build is what this recipe was validated against);
+#   * conda-forge: conda install -c conda-forge colmap=3.8
+#   * Debian/Ubuntu: apt install colmap (3.7–3.9 depending on the release).
+#   The conda-forge and apt routes were not exercised for this release.
+#
+# numpy: opencv-python 4.12.0.88 declares numpy>=2,<2.3 on Python >= 3.9, so
+# numpy 1.26.x cannot be combined with it; 2.2.6 is the tested stack's version.
+# Unpinned entries resolved on 2026-09-01 (Python 3.10.21) to: imageio 2.37.4,
+# pillow 12.3.0, pyyaml 6.0.3, tqdm 4.70.0, psutil 7.2.2, nvidia-ml-py 13.610.43,
+# matplotlib 3.10.9, plotly 7.0.0 (+ imath 0.0.2 pulled in by openexr_numpy);
+# `pip check` reported no broken requirements.
+numpy==2.2.6
+opencv-python==4.12.0.88      # ships cv2.aruco (ChArUco + AprilTag 36h11)
+scipy==1.15.3
+colour-science==0.4.6
+colour-demosaicing==0.2.6     # Menon-2007 demosaicing in reconstruct.py
+OpenEXR==3.4.4                # EXR I/O (with openexr_numpy / pyexr; preprocess tools read EXR via OpenCV)
+openexr_numpy==0.0.8
+pyexr==0.5.0
+imageio
+pillow
+open3d==0.19.0                # point-cloud crop in reconstruct.py; --mesh_path in hand_eye.py
+hydra-core==1.3.2             # reconstruct.py / configs/renderer/reconstruction.yaml
+omegaconf==2.3.0
+pyyaml
+tqdm
+# reconstruction/scheduler.py (multi-GPU batch driver) and tests/reconstruction only
+psutil
+nvidia-ml-py                  # provides the `pynvml` module the scheduler imports
+# visualisation only — not imported by calibration/ or reconstruction/ (matplotlib is an open3d dependency anyway)
+matplotlib
+plotly

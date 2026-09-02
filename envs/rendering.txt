@@ -1,11 +1,13 @@
-# Mitsuba rendering environment (see docs/rendering.md).
+# Mitsuba rendering environment (see README.md, section 'Render our materials on your scene').
 #   conda create -n robocloth-render -c conda-forge python=3.11 -y && conda activate robocloth-render
 #   pip install torch==2.4.1 torchvision==0.19.1 --index-url https://download.pytorch.org/whl/cu121
 #   pip install -r envs/rendering.txt
+huggingface_hub[hf_xet]
 mitsuba==3.8.0
 drjit==1.3.1
 pytorch-lightning==2.6.1
 torchmetrics
+pandas
 hydra-core==1.3.2
 omegaconf==2.3.0
 opencv-python

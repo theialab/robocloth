@@ -1,0 +1,16 @@
+# UV-generation environment for rendering/tools/generate_uv.py (see docs/uv_tool.md).
+#
+# Preferred: no Python env at all -- run the tool inside a Blender installation
+# (Blender >= 3.6; 4.0.2 verified). Note the '--' before the tool's arguments:
+#   blender --background --python rendering/tools/generate_uv.py -- input_mesh.obj
+#
+# Alternative: the bpy wheel in ITS OWN env (it pins numpy<2; never install it into
+# the training or rendering env). PyPI publishes bpy wheels only for Python 3.11
+# (bpy 4.2.0 ... 5.0.1) and, for Blender 5.1+, Python 3.13; nothing exists for
+# Python 3.10 or 3.12, so the historical `bpy==3.6.0` recipe is not installable.
+#   conda create -n robocloth-uv python=3.11 -y && conda activate robocloth-uv
+#   pip install -r envs/uv.txt
+#   python rendering/tools/generate_uv.py input_mesh.obj
+# Verified: bpy-4.5.13-cp311-cp311-manylinux_2_28_x86_64.whl (373 MB) on Linux x86_64
+# with Python 3.11.15; pip pulls its dependencies cython, numpy<2, requests, zstandard.
+bpy==4.5.13
