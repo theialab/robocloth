@@ -169,8 +169,7 @@ reconstruction/   capture-time reconstruction (COLMAP + robot alignment + tensor
 docs/             the guides linked above, data_formats.md, media/ (capture video)
 envs/             pinned environments: training.txt, rendering.txt, calibration.txt, uv.txt
 assets/           README figures (paper teaser, showcase render, tables, qualitative results)
-tests/            GPU-free unit tests (drivers, checkpoint I/O, calibration, reconstruction, fixture, UV tool)
-.github/          workflows/ (manual stage-1 data-path check on a self-hosted GPU runner)
+tests/            GPU-free unit tests (drivers, checkpoint I/O, calibration, reconstruction, UV tool)
 ```
 
 The code paths in this repository are regression-verified against the

@@ -20,9 +20,8 @@ lightning_logs/
 reference_normal.png
 
 # Download targets and Hugging Face caches (hf download --local-dir writes
-# <dir>/.cache/huggingface/), CI scratch of .github/workflows
+# <dir>/.cache/huggingface/)
 DATA_ROOT/
-FIXTURE_ROOT/
 .cache/
 .ci-data/
 .ci-env/

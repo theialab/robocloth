@@ -16,7 +16,7 @@ file schemas in [data_formats.md](data_formats.md).
 | Capture session | the physical rig | no — the [video](#the-capture-session) shows it |
 | Calibration boards | nothing | yes |
 | Intrinsics, hand–eye, turntable axis, colour matrix | the calibration sessions (not released) | the CLIs run; the solved values are in `rig_constants.yaml` |
-| Reconstruction (COLMAP → alignment → tensors) | a raw session: `ldr/`, `hdr_raw/`, `scan_log.json` | not from a released material — use the raw fixture of [capture_fixture.md](capture_fixture.md) |
+| Reconstruction (COLMAP → alignment → tensors) | a raw session: `ldr/`, `hdr_raw/`, `scan_log.json` | not from a released material (raw capture sessions are not part of the release) |
 
 A released material folder (`bash scripts/download_material.sh <id>`) holds
 the *products* of this pipeline — `scan_log.json`, the debayered `hdr/` views
@@ -36,19 +36,10 @@ pip install -r envs/calibration.txt
 colmap -h | head -1        # "COLMAP 3.8" — reconstruction only; install options in envs/calibration.txt
 ```
 
-Run every command from the repository root. COLMAP runs SIFT on the GPU by
-default, which needs a CUDA build or, for a CPU-only build, an OpenGL
-display: on a headless machine a CPU-only `colmap feature_extractor` aborts
-while creating its Qt application. The wrappers pass no SIFT flags, so until
-they grow a switch, put a two-line `colmap` shim first on `PATH` that appends
-`--SiftExtraction.use_gpu 0` to `feature_extractor` and
-`--SiftMatching.use_gpu 0` to `sequential_matcher` / `exhaustive_matcher`
-(check `colmap sequential_matcher -h` for the flag name; newer COLMAP releases
-moved it to `FeatureMatching.use_gpu`) and `exec`s the real binary. This is
-how the reconstruction commands below were validated;
-`scripts/ci_capture_pipeline.sh` builds exactly this shim itself
-(`COLMAP_SIFT_GPU=0`, or automatically when `colmap -h` reports "without
-CUDA" — see [capture_fixture.md](capture_fixture.md)).
+Run every command from the repository root. COLMAP must be a CUDA build:
+the wrappers run SIFT extraction and matching on the GPU. A CPU-only build
+needs `--SiftExtraction.use_gpu 0` and `--SiftMatching.use_gpu 0` (and a
+display for its Qt front end), which the wrappers do not pass.
 
 ## The capture session
 
@@ -295,7 +286,7 @@ radius and beam FWHM (spec sheet).
 Input: a material folder `DATA_ROOT/<id>/` with `scan_log.json`, `ldr/`
 (8-bit, COLMAP input) and `hdr_raw/` (16-bit Bayer), where `<id>` is an
 integer and `DATA_ROOT/sample_size.json` lists the sample footprint for that
-id. That is exactly the raw fixture of [capture_fixture.md](capture_fixture.md).
+id.
 
 ### One material
 

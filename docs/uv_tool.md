@@ -23,12 +23,9 @@ blender --background --python rendering/tools/generate_uv.py -- /absolute/path/t
 
 ### B. The `bpy` wheel in its own environment
 
-PyPI publishes `bpy` wheels only for Python 3.11 (`bpy` 4.2.0 ... 5.0.1) and,
-for Blender 5.1+, Python 3.13 -- nothing for Python 3.10 or 3.12 (checked
-against PyPI on 2026-09-01). The `bpy==3.6.0` / Python 3.10 combination from
-earlier docs is therefore no longer installable. The pinned, verified
-combination is `bpy==4.5.13` (Blender 4.5 LTS) on Python 3.11; the wheel pins
-`numpy<2`, so keep it out of the training and rendering environments:
+PyPI publishes `bpy` wheels for Python 3.11. The pinned combination is
+`bpy==4.5.13` (Blender 4.5 LTS) on Python 3.11; the wheel pins `numpy<2`, so
+keep it in its own environment:
 
 ```bash
 conda create -n robocloth-uv python=3.11 -y && conda activate robocloth-uv
@@ -36,9 +33,6 @@ pip install -r envs/uv.txt          # bpy==4.5.13 (+ cython, numpy<2, requests, 
 python rendering/tools/generate_uv.py /absolute/path/to/mesh.obj
 ```
 
-Verified: `bpy-4.5.13-cp311-cp311-manylinux_2_28_x86_64.whl` (373 MB) with
-Python 3.11.15 on Linux x86_64 passes the same test suite as the Blender
-binary.
 
 ## Usage
 
@@ -54,9 +48,8 @@ generate_uv.py INPUT [--output OUT.ply] [--force] [--angle-limit 89]
 | `--force` | Replace an existing output. Without it an existing output is an error. |
 | `--angle-limit` | Smart UV Project angle limit in degrees, (0, 90]. Default 89. |
 | `--island-margin` | Smart UV Project island margin. Default 0.02. |
-| `--keep-polygons` | Write the source quads/n-gons instead of triangles. **Not loadable by `render.py`** (see below); the tool prints a warning. |
+| `--keep-polygons` | Write the source quads/n-gons instead of triangles (not loadable by `render.py`). |
 | `--ascii` | Write an ASCII PLY (default: binary little-endian). |
-| `--triangulate` | Accepted for compatibility with earlier versions; triangles are now the default. |
 
 What happens:
 
@@ -78,9 +71,7 @@ What happens:
 
 Guarantees:
 
-- The input file is never written to, whatever its format. (An earlier version
-  always used the PLY importer and, for a `.obj` input, overwrote the input
-  with a binary PLY still named `.obj`.)
+- The input file is never written to, whatever its format.
 - The output is always a distinct `.ply`: an `--output` that resolves to the
   input file, or one with another extension, is refused before Blender starts.
 - The exported vertex positions stay in the input file's coordinate frame: OBJ
@@ -88,13 +79,9 @@ Guarantees:
   Z-up rotation Blender applies to glTF on import is undone on export.
   Swapping `mesh.obj` for `mesh_uv.ply` in `scene.xml` therefore does not move
   the object.
-- The default output is a triangle mesh and loads in Mitsuba. Mitsuba's PLY
-  plugin rejects quads and n-gons (`[PLYMesh] ... incompatible contents -- is
-  this a triangle mesh?!` for binary files, `trailing tokens after end of PLY
-  file!` for ASCII ones), so faces are triangulated on export (Blender's
-  `export_triangulated_mesh`, or a Triangulate modifier on Blender versions
-  whose exporter lacks that option) and the post-export check proves it.
-  `--keep-polygons` opts out for other consumers; do not point `render.py`
+- The default output is a triangle mesh, which is what Mitsuba's PLY plugin
+  requires; faces are triangulated on export and the post-export check proves
+  it. `--keep-polygons` opts out for other consumers; do not point `render.py`
   at such a file.
 
 ## Using the result
@@ -115,27 +102,6 @@ Reference the PLY from `scene.xml` and control the repeat density with
 Smart UV Project packs all islands into the unit square, so `uv_tiling` is the
 number of times the material texture repeats across that square; larger
 objects want larger values.
-
-## Troubleshooting
-
-- `no '--' separator found`: under `blender` the tool's arguments must come
-  after `--`, otherwise Blender tries to open your mesh as a `.blend` file.
-- `output already exists`: pass `--force` or choose another `--output`.
-- `the imported mesh has no faces`: the input is a point cloud or a wireframe;
-  there is nothing to unwrap (or render).
-- `failed to import ...`: Blender could not read the file (the importer's own
-  message follows, e.g. `Bad glTF: json error ...`).
-- `render.py` fails with `is this a triangle mesh?!` or `trailing tokens after
-  end of PLY file!`: the PLY holds quads/n-gons -- it was written with
-  `--keep-polygons` or by the earlier version of this tool. Re-run without
-  `--keep-polygons` (add `--force` to replace it).
-- `this Blender has no glTF importer`: the glTF 2.0 add-on is disabled in your
-  Blender preferences (it is on by default and built into the `bpy` wheel).
-- `Blender's Python API (bpy) is not importable`: the script was started with a
-  Python that has no `bpy`; use method A or B above.
-- Blender prints its own banner and importer/exporter timings around the
-  `[generate_uv]` lines; the exit code and the `[generate_uv]` lines are what
-  matter.
 
 ## Tests
 

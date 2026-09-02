@@ -397,9 +397,7 @@ this repository yet.
 * end-to-end calibration and reconstruction from raw capture. The
   reconstruction code path was shown byte-identical on one material's raw
   session (observation tensor, points and debayered HDR identical; poses
-  within 1e-13 mm), but no numbers derived from it are claimed;
-  [capture_fixture.md](capture_fixture.md) runs the software path on a
-  small fixture without comparing numbers.
+  within 1e-13 mm), but no numbers derived from it are claimed.
 
 **Regression checks against the original experiment code** (how the
 restructure was validated — code-path parity, not paper numbers):
