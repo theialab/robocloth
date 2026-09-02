@@ -50,35 +50,60 @@ _ASSIGNMENT_KEYS = {
 }
 
 
+def _require_checkpoint_root(shape_id: str, checkpoint_root: str, what: str) -> None:
+    """Fail closed on an unset or non-existent ``checkpoint_root``.
+
+    A stale placeholder (the bundled examples default to
+    ``${BRDF_CKPT_ROOT:-/absolute/path/to/...}``) or a typo must stop the
+    render here, with a message that says how to fix it, rather than
+    surfacing later as a confusing glob miss.
+    """
+    if not checkpoint_root:
+        raise ValueError(f"[{shape_id}] {what} needs a checkpoint_root")
+    if not os.path.isdir(checkpoint_root):
+        raise FileNotFoundError(
+            f"[{shape_id}] checkpoint_root is not a directory: {checkpoint_root!r} "
+            "(materials.json \"checkpoint_root\" after env expansion). Download the "
+            "released checkpoints with scripts/download_material.sh and point "
+            "BRDF_CKPT_ROOT (or checkpoint_root) at .../checkpoints/stage2/RoboCloth.")
+
+
 def resolve_checkpoint(shape_id: str, assignment: dict, checkpoint_root: str) -> str:
     """Resolve one assignment to a checkpoint file.
 
     ``{"material": "<id>"}`` globs ``<checkpoint_root>/<id>/Ours_epoch*.ckpt``
     (exactly one match expected).  ``{"ckpt": ...}`` is used verbatim if
-    absolute, else joined onto ``checkpoint_root``.
+    absolute, else joined onto ``checkpoint_root``.  Every failure mode — no
+    root, root not a directory, no material folder, empty folder, missing
+    file, ambiguous glob — raises; a shape is never silently left unassigned.
     """
     from brdf_plugin.utils.scene_loader import expand_env
 
     if "ckpt" in assignment:
         ckpt = expand_env(str(assignment["ckpt"]))
         if not os.path.isabs(ckpt):
-            if not checkpoint_root:
-                raise ValueError(
-                    f"[{shape_id}] relative ckpt {ckpt!r} needs a checkpoint_root")
+            _require_checkpoint_root(shape_id, checkpoint_root, f"relative ckpt {ckpt!r}")
             ckpt = os.path.join(checkpoint_root, ckpt)
         if not os.path.isfile(ckpt):
             raise FileNotFoundError(f"[{shape_id}] checkpoint not found: {ckpt}")
         return ckpt
 
     if "material" in assignment:
-        if not checkpoint_root:
-            raise ValueError(
-                f"[{shape_id}] \"material\" assignments need a checkpoint_root")
-        pattern = os.path.join(checkpoint_root, str(assignment["material"]),
-                               "Ours_epoch*.ckpt")
+        _require_checkpoint_root(shape_id, checkpoint_root, "\"material\" assignments")
+        material = str(assignment["material"])
+        material_dir = os.path.join(checkpoint_root, material)
+        pattern = os.path.join(material_dir, "Ours_epoch*.ckpt")
+        if not os.path.isdir(material_dir):
+            present = sorted(os.listdir(checkpoint_root))
+            raise FileNotFoundError(
+                f"[{shape_id}] no folder for material {material!r} under {checkpoint_root} "
+                f"(it contains: {present[:10] if present else 'nothing — empty directory'}). "
+                f"Download it with: bash scripts/download_material.sh {material}")
         matches = sorted(glob.glob(pattern))
         if len(matches) == 0:
-            raise FileNotFoundError(f"[{shape_id}] no checkpoint matches {pattern}")
+            raise FileNotFoundError(
+                f"[{shape_id}] no checkpoint matches {pattern} "
+                f"(folder contains: {sorted(os.listdir(material_dir))[:10]})")
         if len(matches) > 1:
             raise RuntimeError(
                 f"[{shape_id}] ambiguous checkpoint glob {pattern}: {matches}")

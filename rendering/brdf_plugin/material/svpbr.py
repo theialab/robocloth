@@ -423,7 +423,7 @@ def _load_axf_brdf_core():
 
     Resolution order:
     1. ``AXF_BRDF_PY_PATH`` / ``AXF_EVAL_BUILD`` (directories containing the .so)
-    2. ``<this file>/../../../axf/eval/build`` (sibling ``axf`` next to ``SGHyperMaterials``)
+    2. ``<this file>/../../../axf/eval/build`` (sibling ``axf`` next to the repository)
     3. Walk parents of ``brdf_plugin/material`` for ``axf/eval/build``
     4. If a matching ``axf_brdf_core*.so`` is found, load via ``spec_from_file_location`` (works without sys.path).
 

@@ -3,7 +3,7 @@ module: "model.neural_brdf_refactored"
 # Bonn dataset root holding bonn_point_metadata.json (per-material H, W, num_points).
 # The loader (mlp.create_anisotropic_model) reads H,W from here to size the
 # per-material latent bank before loading the checkpoint.
-bonn_dataset_folder: /media/raid/cloth/Bonn_val
+bonn_dataset_folder: /absolute/path/to/Bonn_val   # set to your UBOFAB19 Bonn_val folder (holds bonn_point_metadata.json)
 btf_path: ""
 latent_dim: 24
 predict_frame: True

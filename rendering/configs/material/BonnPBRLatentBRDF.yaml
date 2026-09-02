@@ -1,7 +1,7 @@
 type: "BonnPBRLatentBRDF"
 module: "model.neural_brdf_refactored"
 # Bonn dataset root holding bonn_point_metadata.json (per-material H, W).
-bonn_dataset_folder: /media/raid/cloth/Bonn_val
+bonn_dataset_folder: /absolute/path/to/Bonn_val   # set to your UBOFAB19 Bonn_val folder (holds bonn_point_metadata.json)
 btf_path: ""
 predict_frame: True
 use_predicted_frame_at_eval: true

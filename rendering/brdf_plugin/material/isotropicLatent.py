@@ -25,7 +25,6 @@ class LatentTexturedModel(LightningModule):
         self.predict_normal = cfg.predict_normal
         if self.predict_normal:
             total_latent_dim = total_latent_dim + 3
-        #self.pbr_texture = load_pbr_texture('/mnt/data/colin/colin/BRDF-Fipt/fabric_pattern_07_4k/textures').unsqueeze(0).cuda()
         self.pbr_texture = None
         
         # Create 2D texture latent grids

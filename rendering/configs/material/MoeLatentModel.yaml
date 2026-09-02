@@ -11,7 +11,7 @@ Gaussian_blur: False
 activation: "relu"
 input_channels: 9
 
-latent_texture_path: "/media/raid/cloth/output/BRDF/real/Continue_All-images_Correct-cam_Learnable-emitter_Neural-geometry_Stream-training-chunk-400-iter-5000_run_1/training/model_0.20_0.20/last.ckpt"
+latent_texture_path: "/absolute/path/to/latent_texture.pt"
 
 # neural geometry 
 neural_geometry:

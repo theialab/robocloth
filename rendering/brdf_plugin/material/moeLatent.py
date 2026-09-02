@@ -205,7 +205,6 @@ class MoeLatentModel(LightningModule):
         if self.neural_geometry:
             total_latent_dim = total_latent_dim + self.geometry_latent_dim # 8 for neural geometry latent
 
-        # self.pbr_texture = load_pbr_texture('/mnt/data/colin/colin/BRDF-Fipt/denim_fabric_03_4k/textures').unsqueeze(0).cuda()
         
         
         # Create 2D texture latent grids

@@ -12,6 +12,49 @@ import torch.nn.functional as NF
 # Root of the rendering/ package: material yamls live in <root>/configs/material.
 _RENDER_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+
+def _import_checkpoint_io():
+    """Load the shared fail-closed checkpoint policy (training/utils/checkpoint_io.py).
+
+    rendering/ runs with cwd=rendering and never imports the training package,
+    so the module is loaded by file path — the same sys.path-free technique
+    svpbr.py uses for axf_brdf_core — instead of duplicating the policy here.
+    The module is pure torch, so it works unchanged in the rendering env.
+    """
+    import importlib.util
+    import sys
+    name = "robocloth_checkpoint_io"
+    if name in sys.modules:
+        return sys.modules[name]
+    path = os.path.join(os.path.dirname(_RENDER_ROOT), "training", "utils", "checkpoint_io.py")
+    if not os.path.isfile(path):
+        raise ImportError(
+            f"shared checkpoint loader not found at {path}; rendering/ must stay "
+            "next to training/ inside the RoboCloth repository")
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+checkpoint_io = _import_checkpoint_io()
+
+# Material-namespace keys that training writes but the renderer deliberately
+# does not model — the ONLY tensors a checkpoint may carry that the strict
+# load below does not require the model to have. Trainer-side state
+# (gt_material.*, emitter.*, pan_weights) lives outside 'material.' and is
+# split off before loading, so it is not listed here.
+#   material_offset_tensor: integer per-material offsets into the multi-
+#   material latent bank, registered by the training-side Bonn classes in
+#   multi-material mode (training/models/neural_brdf_refactored.py,
+#   BonnLatentBRDF / BonnPBRLatentBRDF._load_point_metadata); the renderer
+#   wrappers have no such buffer and never index by material id.
+# If a checkpoint family ever needs another one, add its key prefix HERE
+# (explicitly) — a non-strict load is never the answer (it rendered
+# incompatible ckpts as noise).
+IGNORED_MATERIAL_KEY_PREFIXES = ('material_offset_tensor',)
+
 from brdf_plugin.material.anisotropicLatent import AnisotropicLatentTexturedModel,MERLBRDF,MERLInterface,MerlTorch
 from brdf_plugin.material.isotropicLatent import LatentTexturedModel
 from brdf_plugin.material.svpbr import SvPBRBRDF,AXFBRDF
@@ -48,6 +91,12 @@ def create_anisotropic_model(model_path=None, material_type="AnisotropicLatentTe
         print(f"Using ground-truth BTF: {btf_path}")
         return UBOBTFInterpolator(btf_path)
 
+    # Fail closed before any GPU allocation: a requested checkpoint must exist.
+    # (model_path=None is the explicit random-init path via use_anisotropic;
+    # "" is the PBR-without-weights convention — neither names a checkpoint.)
+    if model_path and not os.path.isfile(model_path):
+        raise FileNotFoundError(f"checkpoint not found: {model_path}")
+
     config_path = os.path.join(_RENDER_ROOT, "configs", "material", f"{material_type}.yaml")
     print(f"Loading configuration from config file: {config_path}")
     with open(config_path, 'r', encoding='utf-8') as f:
@@ -81,7 +130,7 @@ def create_anisotropic_model(model_path=None, material_type="AnisotropicLatentTe
     elif material_type == "MERLBRDF":
         model = MERLBRDF(config).cuda()
     elif material_type == "AXFBRDF":
-        axf_path="/home/haoran/axf/mat0001.axf"
+        axf_path="/absolute/path/to/axf/mat0001.axf"
         model = AXFBRDF(config,axf_path).cuda()
     elif material_type == "UBOLatentBRDF":
         model = UBOLatentBRDF(config).cuda()
@@ -103,121 +152,66 @@ def create_anisotropic_model(model_path=None, material_type="AnisotropicLatentTe
     if model_path=="":
         print("Using PBR model")
         return model.cuda()
-    
-    # If model path is provided, load pretrained weights
-    if model_path and os.path.exists(model_path):
-        print(f"Loading pretrained model: {model_path}")
-        try:
-            # First try safe loading (weights only)
-            checkpoint = torch.load(model_path, map_location='cuda', weights_only=True)
-            print("Using safe mode to load checkpoint")
-        except Exception as e:
-            print(f"Safe loading failed (may contain config objects): trying unsafe mode...")
-            try:
-                # For PyTorch Lightning checkpoints, usually need weights_only=False
-                checkpoint = torch.load(model_path, map_location='cuda', weights_only=False)
-                print("Successfully loaded checkpoint (containing config objects)")
-            except Exception as e2:
-                print(f"Loading failed: {e2}")
-                print("Using randomly initialized model")
-                return model
-        
-        # Handle different checkpoint formats
-        if isinstance(checkpoint, dict):
-            if 'state_dict' in checkpoint:
-                # PyTorch Lightning (.ckpt) or standard format
-                state_dict = checkpoint['state_dict']
-                print("Detected PyTorch Lightning checkpoint format")
-            elif 'model_state_dict' in checkpoint:
-                # Standard PyTorch format
-                state_dict = checkpoint['model_state_dict']
-                print("Detected standard PyTorch checkpoint format")
-            elif any(key.startswith(('mlp', 'latent_texture')) for key in checkpoint.keys()):
-                # Direct state_dict (possibly from weights_only=True)
-                state_dict = checkpoint
-                print("Detected direct state_dict format")
-            else:
-                # Try to load directly
-                state_dict = checkpoint
-                print("Using default loading method")
-        else:
-            # Non-dictionary format, possibly other types of checkpoints
-            print(f"Warning: Unknown checkpoint format: {type(checkpoint)}")
-            print("Using randomly initialized model")
-            return model
-        
-        # Handle PyTorch Lightning key names (remove prefix)
-        cleaned_state_dict = {}
-        print(f"Checkpoint contains {len(state_dict)} keys")
-        material_keys = [k for k in state_dict.keys() if k.startswith('material.')]
-        if material_keys:
-            print(f"Found {len(material_keys)} keys with 'material.' prefix")
-        
-        for key, value in state_dict.items():
-            if key.startswith('material.'):
-                # Remove 'material.' prefix
-                new_key = key[9:]  # 'material.' is 9 characters
-                cleaned_state_dict[new_key] = value
-            elif key.startswith('model.'):
-                # Remove 'model.' prefix
-                new_key = key[6:]  # 'model.' is 6 characters
-                cleaned_state_dict[new_key] = value
-            else:
-                cleaned_state_dict[key] = value
-        
-        print(f"Cleaned state_dict contains {len(cleaned_state_dict)} keys")
-        # Display first few keys for diagnostic
-        key_samples = list(cleaned_state_dict.keys())[:5]
-        print(f"Example keys: {key_samples}")
 
-        # Bonn models store a per-material H*W latent bank (resolution varies per
-        # material). Resize the embedding to match the checkpoint BEFORE loading,
-        # using H,W from bonn_point_metadata.json — otherwise the bank silently
-        # fails to load (size mismatch under strict=False) and renders as random
-        # noise. Material id is the parent folder of the ckpt (.../Bonn/<id>/X.ckpt).
-        if material_type in ("BonnLatentBRDF", "BonnPBRLatentBRDF"):
-            import json
-            mat_id = os.path.basename(os.path.dirname(model_path))
-            meta_path = os.path.join(
-                getattr(config, "bonn_dataset_folder", "/media/raid/cloth/Bonn_val"),
-                "bonn_point_metadata.json")
-            with open(meta_path, "r") as mf:
-                _meta = json.load(mf)
-            if str(mat_id) not in _meta:
-                raise KeyError(f"Bonn material '{mat_id}' not in {meta_path}")
-            H, W = int(_meta[str(mat_id)]["H"]), int(_meta[str(mat_id)]["W"])
-            bank_n = cleaned_state_dict["point_latent_bank.weight"].shape[0]
-            if H * W != bank_n:
-                raise ValueError(
-                    f"Bonn mat {mat_id}: metadata H*W={H*W} != ckpt bank {bank_n}")
-            model.set_grid(H, W)
-            # Keep only tensors the model actually has (drops training-only keys
-            # like 'pan_weights') so the strict load below is clean & verifiable.
-            _msd = model.state_dict()
-            cleaned_state_dict = {k: v for k, v in cleaned_state_dict.items() if k in _msd}
-            if "point_latent_bank.weight" not in cleaned_state_dict:
-                raise KeyError(f"Bonn mat {mat_id}: ckpt has no point_latent_bank.weight")
-            print(f"[Bonn] mat {mat_id}: latent grid {H}x{W} = {bank_n} points")
+    if model_path is None:
+        print("Using randomly initialized AnisotropicLatentTexturedModel")
+        model.eval()
+        return model.cuda()
 
-        try:
-            model.load_state_dict(cleaned_state_dict)
-            print("Model weights loaded successfully")
-        except Exception as e:
-            print(f"Weight loading failed: {e}")
-            print("Attempting to load with strict=False mode...")
-            try:
-                model.load_state_dict(cleaned_state_dict, strict=False)
-                print("Model weights loaded successfully (non-strict mode)")
-            except Exception as e2:
-                print(f"Non-strict mode also failed: {e2}")
-                print("Using randomly initialized model")
-                return model
+    # Load pretrained weights. Fail closed (beta item B2): an unreadable file,
+    # an unknown format or any missing / unexpected / shape-mismatched tensor
+    # raises — there is no non-strict retry and no random-init fallback.
+    print(f"Loading pretrained model: {model_path}")
+    checkpoint = checkpoint_io.load_checkpoint_file(model_path, map_location='cuda')
+    state_dict = checkpoint_io.extract_state_dict(checkpoint, source=model_path)
+    print(f"Checkpoint contains {len(state_dict)} keys")
+
+    # Lightning trainer checkpoints hold the whole LightningModule. The BRDF
+    # model is the 'material.' sub-tree; the other keys (gt_material.*,
+    # emitter.*, per-trainer buffers such as pan_weights) are trainer state,
+    # not material weights — they are split off explicitly and reported.
+    # Bare model checkpoints keep the legacy handling: an optional 'model.'
+    # prefix is stripped and everything else is loaded as-is.
+    material_state_dict, trainer_state_dict = checkpoint_io.split_namespace(state_dict, 'material.')
+    if material_state_dict:
+        print(f"Found {len(material_state_dict)} keys with 'material.' prefix; skipping "
+              f"{len(trainer_state_dict)} trainer-state keys: {sorted(trainer_state_dict)[:8]}"
+              + (" ..." if len(trainer_state_dict) > 8 else ""))
+        state_dict = material_state_dict
     else:
-        if model_path:
-            print(f"Warning: Model file {model_path} does not exist, using randomly initialized model")
-        else:
-            print("Using randomly initialized AnisotropicLatentTexturedModel")
-    
+        state_dict = {(k[6:] if k.startswith('model.') else k): v for k, v in state_dict.items()}
+    print(f"Example keys: {list(state_dict.keys())[:5]}")
+
+    # Bonn models store a per-material H*W latent bank (resolution varies per
+    # material). Resize the embedding to match the checkpoint BEFORE loading,
+    # using H,W from bonn_point_metadata.json — otherwise the bank cannot load
+    # (size mismatch) and the strict load below rejects the checkpoint.
+    # Material id is the parent folder of the ckpt (.../Bonn/<id>/X.ckpt).
+    if material_type in ("BonnLatentBRDF", "BonnPBRLatentBRDF"):
+        import json
+        mat_id = os.path.basename(os.path.dirname(model_path))
+        meta_path = os.path.join(
+            getattr(config, "bonn_dataset_folder", "/absolute/path/to/Bonn_val"),
+            "bonn_point_metadata.json")
+        with open(meta_path, "r") as mf:
+            _meta = json.load(mf)
+        if str(mat_id) not in _meta:
+            raise KeyError(f"Bonn material '{mat_id}' not in {meta_path}")
+        H, W = int(_meta[str(mat_id)]["H"]), int(_meta[str(mat_id)]["W"])
+        if "point_latent_bank.weight" not in state_dict:
+            raise KeyError(f"Bonn mat {mat_id}: ckpt has no point_latent_bank.weight")
+        bank_n = state_dict["point_latent_bank.weight"].shape[0]
+        if H * W != bank_n:
+            raise ValueError(
+                f"Bonn mat {mat_id}: metadata H*W={H*W} != ckpt bank {bank_n}")
+        model.set_grid(H, W)
+        print(f"[Bonn] mat {mat_id}: latent grid {H}x{W} = {bank_n} points")
+
+    report = checkpoint_io.load_state_dict_strict(
+        model, state_dict, ignore_prefixes=IGNORED_MATERIAL_KEY_PREFIXES, source=model_path)
+    print(report.summary())
+    print("Model weights loaded successfully")
+
     model.eval()
 
     return model.cuda()
@@ -315,8 +309,6 @@ class MLPBRDF(mi.BSDF):
                 self.anisotropic_model.apply_cosine_at_eval = apply_cosine_at_eval
             except (AttributeError, RuntimeError):
                 pass
-            #self.anisotropic_model=MerlTorch(merl_files="/home/featurize/data/demo")
-            #self.anisotropic_model=HyperBRDF("/home/featurize/data/results/merl/MERL/pt_results/gray-plastic.pt","/home/featurize/work/HyperBRDF/data/merl_median.binary")
             torch.cuda.empty_cache()
             self.use_anisotropic = True
             print(f"MLPBRDF: AnisotropicLatentTexturedModel loaded (apply_cosine_at_eval={apply_cosine_at_eval})")

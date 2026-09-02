@@ -1,5 +1,5 @@
 {
-  "checkpoint_root": "${BRDF_CKPT_ROOT:-/media/raid/cloth/output/BRDF/Stage-2-Finals}/Ours",
+  "checkpoint_root": "${BRDF_CKPT_ROOT:-/absolute/path/to/ckpts/checkpoints/stage2/RoboCloth}",
   "assignments": {
     "cloth": {"material": "145", "uv_tiling": 5.0}
   }

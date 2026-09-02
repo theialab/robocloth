@@ -1,11 +1,12 @@
 <scene version="2.1.0">
 
-<!-- Thin copy of the teaser room scene (room_2/room/room.xml).  Meshes and
-     textures are NOT copied: $scene_root must point at the downloaded teaser
-     assets folder (the one that contains room_2/).  Override the default
-     below with the TEASER_SCENE_ROOT environment variable. -->
+<!-- Thin copy of the teaser room scene (room.xml of the released room).
+     Meshes and textures are NOT copied: $scene_root must point at the
+     downloaded render_assets/teaser_room folder (the one that contains
+     meshes/ and textures/).  Override the default below with the
+     TEASER_SCENE_ROOT environment variable. -->
 
-	<default name="scene_root" value="${TEASER_SCENE_ROOT:-/media/raid/cloth/output/Misuba_rendering/teaser}"/>
+	<default name="scene_root" value="${TEASER_SCENE_ROOT:-/absolute/path/to/render_assets/teaser_room}"/>
 
 <!-- Defaults, these can be set via the command line: -Darg=value -->
 
@@ -102,7 +103,7 @@
 			<float name="metallic" value="0.000000"/>
 			<float name="anisotropic" value="0.000000"/>
 			<texture type="bitmap" name="roughness">
-				<string name="filename" value="$scene_root/room_2/room/textures/Panel Maple_Rou.jpg"/>
+				<string name="filename" value="$scene_root/textures/Panel Maple_Rou.jpg"/>
 				<boolean name="raw" value="true"/>
 			</texture>
 			<float name="sheen" value="0.000000"/>
@@ -254,7 +255,7 @@
 		<bsdf type="null" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__35" name="elm__35">
-		<string name="filename" value="$scene_root/room_2/room/meshes/neon_lamp-neon.ply"/>
+		<string name="filename" value="$scene_root/meshes/neon_lamp-neon.ply"/>
 		<ref id="empty-emitter-bsdf" name="bsdf"/>
 		<emitter type="area" name="emitter">
 			<rgb value="7.200000 7.200000 7.200000" name="radiance"/>
@@ -264,149 +265,149 @@
 <!-- Shapes -->
 
 	<shape type="ply" id="elm__2" name="elm__2">
-		<string name="filename" value="$scene_root/room_2/room/meshes/polstar_3.ply"/>
+		<string name="filename" value="$scene_root/meshes/polstar_3.ply"/>
 		<ref id="mat-carpet" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__3" name="elm__3">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Pillow_008.ply"/>
+		<string name="filename" value="$scene_root/meshes/Pillow_008.ply"/>
 		<ref id="mat-carpet" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__5" name="elm__5">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Pillow_007.ply"/>
+		<string name="filename" value="$scene_root/meshes/Pillow_007.ply"/>
 		<ref id="mat-carpet" name="bsdf"/>
 	</shape>
 
 
 	<shape type="ply" id="elm__55" name="elm__55">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Pillow.ply"/>
+		<string name="filename" value="$scene_root/meshes/Pillow.ply"/>
 		<ref id="mat-carpet" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__56" name="elm__56">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Round_Pillow.ply"/>
+		<string name="filename" value="$scene_root/meshes/Round_Pillow.ply"/>
 		<ref id="mat-carpet" name="bsdf"/>
 	</shape>
 
 	<shape type="ply" id="elm__57" name="elm__57">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Pillow_002.ply"/>
+		<string name="filename" value="$scene_root/meshes/Pillow_002.ply"/>
 		<ref id="mat-carpet" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__58" name="elm__58">
-		<string name="filename" value="$scene_root/room_2/room/meshes/LovePillow_002.ply"/>
+		<string name="filename" value="$scene_root/meshes/LovePillow_002.ply"/>
 		<ref id="mat-carpet" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__59" name="elm__59">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Pillow_001.ply"/>
+		<string name="filename" value="$scene_root/meshes/Pillow_001.ply"/>
 		<ref id="mat-carpet" name="bsdf"/>
 	</shape>
 
 
 	<shape type="ply" id="elm__12" name="elm__12">
-		<string name="filename" value="$scene_root/room_2/room/meshes/dressoir_front.ply"/>
+		<string name="filename" value="$scene_root/meshes/dressoir_front.ply"/>
 		<ref id="mat-dressoir" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__14" name="elm__14">
-		<string name="filename" value="$scene_root/room_2/room/meshes/dressoir_body.ply"/>
+		<string name="filename" value="$scene_root/meshes/dressoir_body.ply"/>
 		<ref id="mat-wood.dark" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__15" name="elm__15">
-		<string name="filename" value="$scene_root/room_2/room/meshes/dressoir_sides_02.ply"/>
+		<string name="filename" value="$scene_root/meshes/dressoir_sides_02.ply"/>
 		<ref id="mat-dressoir" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__16" name="elm__16">
-		<string name="filename" value="$scene_root/room_2/room/meshes/dressoir_sides.ply"/>
+		<string name="filename" value="$scene_root/meshes/dressoir_sides.ply"/>
 		<ref id="mat-dressoir" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__22" name="elm__22">
-		<string name="filename" value="$scene_root/room_2/room/meshes/tall_lamp-metal.ply"/>
+		<string name="filename" value="$scene_root/meshes/tall_lamp-metal.ply"/>
 		<ref id="mat-metal" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__23" name="elm__23">
-		<string name="filename" value="$scene_root/room_2/room/meshes/tall_lamp-metal.black.ply"/>
+		<string name="filename" value="$scene_root/meshes/tall_lamp-metal.black.ply"/>
 		<ref id="mat-metal.black" name="bsdf"/>
 	</shape>
 
 	<shape type="ply" id="elm__25" name="elm__25">
-		<string name="filename" value="$scene_root/room_2/room/meshes/tall_lamp-emissions.lamp.ply"/>
+		<string name="filename" value="$scene_root/meshes/tall_lamp-emissions.lamp.ply"/>
 		<ref id="mat-emissions.lamp" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__26" name="elm__26">
-		<string name="filename" value="$scene_root/room_2/room/meshes/tall_lamp-plastic.black.ply"/>
+		<string name="filename" value="$scene_root/meshes/tall_lamp-plastic.black.ply"/>
 		<ref id="mat-plastic.black" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__29" name="elm__29">
-		<string name="filename" value="$scene_root/room_2/room/meshes/curtains_001.ply"/>
+		<string name="filename" value="$scene_root/meshes/curtains_001.ply"/>
 		<ref id="mat-curtain" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__301" name="elm__301">
-		<string name="filename" value="$scene_root/room_2/room/meshes/curtains_uv2.ply"/>
+		<string name="filename" value="$scene_root/meshes/curtains_uv2.ply"/>
 		<ref id="mat-curtain.green" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__302" name="elm__302">
-		<string name="filename" value="$scene_root/room_2/room/meshes/curtains_002.ply"/>
+		<string name="filename" value="$scene_root/meshes/curtains_002.ply"/>
 		<ref id="mat-curtain.green" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__303" name="elm__303">
-		<string name="filename" value="$scene_root/room_2/room/meshes/curtains_003-curtain.ply"/>
+		<string name="filename" value="$scene_root/meshes/curtains_003-curtain.ply"/>
 		<ref id="mat-curtain.green" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__304" name="elm__304">
-		<string name="filename" value="$scene_root/room_2/room/meshes/curtains_003-curtain.green.ply"/>
+		<string name="filename" value="$scene_root/meshes/curtains_003-curtain.green.ply"/>
 		<ref id="mat-curtain.green" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__30" name="elm__30">
-		<string name="filename" value="$scene_root/room_2/room/meshes/curtains_004.ply"/>
+		<string name="filename" value="$scene_root/meshes/curtains_004.ply"/>
 		<ref id="mat-curtain.green" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__33" name="elm__33">
-		<string name="filename" value="$scene_root/room_2/room/meshes/neon_lamp-plastic.black.ply"/>
+		<string name="filename" value="$scene_root/meshes/neon_lamp-plastic.black.ply"/>
 		<ref id="mat-plastic.black" name="bsdf"/>
 	</shape>
 
 
 	<shape type="ply" id="elm__39" name="elm__39">
-		<string name="filename" value="$scene_root/room_2/room/meshes/wall_plugs-plastic.black.ply"/>
+		<string name="filename" value="$scene_root/meshes/wall_plugs-plastic.black.ply"/>
 		<ref id="mat-plastic.black" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__40" name="elm__40">
-		<string name="filename" value="$scene_root/room_2/room/meshes/wall_plugs-plastic.white.ply"/>
+		<string name="filename" value="$scene_root/meshes/wall_plugs-plastic.white.ply"/>
 		<ref id="mat-plastic.white" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__43" name="elm__43">
-		<string name="filename" value="$scene_root/room_2/room/meshes/carpet-carpet.ply"/>
+		<string name="filename" value="$scene_root/meshes/carpet-carpet.ply"/>
 		<ref id="mat-carpet" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__44" name="elm__44">
-		<string name="filename" value="$scene_root/room_2/room/meshes/carpet-carpet.white.ply"/>
+		<string name="filename" value="$scene_root/meshes/carpet-carpet.white.ply"/>
 		<ref id="mat-carpet.white" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__48" name="elm__48">
-		<string name="filename" value="$scene_root/room_2/room/meshes/walls-wall.ply"/>
+		<string name="filename" value="$scene_root/meshes/walls-wall.ply"/>
 		<ref id="mat-wall" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__49" name="elm__49">
-		<string name="filename" value="$scene_root/room_2/room/meshes/walls-floor.ply"/>
+		<string name="filename" value="$scene_root/meshes/walls-floor.ply"/>
 		<ref id="mat-floor" name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__50" name="elm__50">
-		<string name="filename" value="$scene_root/room_2/room/meshes/walls-wall.bricks.ply"/>
+		<string name="filename" value="$scene_root/meshes/walls-wall.bricks.ply"/>
 		<ref id="mat-wall.bricks" name="bsdf"/>
 	</shape>
 
 	<shape type="ply" id="elm__51" name="elm__51">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Cloud_Sofa-Metal- Black .ply"/>
+		<string name="filename" value="$scene_root/meshes/Cloud_Sofa-Metal- Black .ply"/>
 		<ref id="mat-Metal- Black " name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__52" name="elm__52">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Cloud_Sofa-Fabric.ply"/>
+		<string name="filename" value="$scene_root/meshes/Cloud_Sofa-Fabric.ply"/>
 		<ref id="mat-Fabric" name="bsdf"/>
 	</shape>
 
 	<shape type="ply" id="elm__53" name="elm__53">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Cloud_Sofa001-Metal- Black .001.ply"/>
+		<string name="filename" value="$scene_root/meshes/Cloud_Sofa001-Metal- Black .001.ply"/>
 		<ref id="mat-Metal- Black " name="bsdf"/>
 	</shape>
 	<shape type="ply" id="elm__54" name="elm__54">
-		<string name="filename" value="$scene_root/room_2/room/meshes/Cloud_Sofa001-Fabric.001.ply"/>
+		<string name="filename" value="$scene_root/meshes/Cloud_Sofa001-Fabric.001.ply"/>
 		<ref id="mat-Fabric" name="bsdf"/>
 	</shape>
 <!-- Volumes -->

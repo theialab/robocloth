@@ -7,10 +7,10 @@ texture (grid_sample), the NeuralGeometry UV-offset MLP, predicted-frame
 extraction and world->local transform — but replaces the learned MLP
 ``BRDFDecoder`` with the analytic Disney ``PBRDecoder`` (from ubo_pbr.py).
 
-This mirrors BRDF-Fipt's ``model.neural_brdf_refactored.LearnablePBRTexturedModel``
+This mirrors the training code's ``training/models/neural_brdf_refactored.LearnablePBRTexturedModel``
 (trained via scripts/jobs/run_stage2_ours_PBR.sh: material=learnable_pbr_texture_model,
 disney=True, latent_dim=24, texture_resolution=2048, neural_geometry.factor=0.08),
-so checkpoints from /media/raid/cloth/output/BRDF/Stage-2-Finals/Ours/<mat>/PBR_*.ckpt
+so checkpoints from checkpoints/stage2/RoboCloth/<mat>/PBR_epoch*.ckpt (released layout)
 load cleanly.
 
 Latent-texture channel layout (total 34 for disney + predict_frame + geom16):
@@ -20,7 +20,7 @@ Latent-texture channel layout (total 34 for disney + predict_frame + geom16):
     [12:28]  16-D neural-geometry latent
     [28:34]  predicted frame: normal(3) + tangent(3)
 
-eval_brdf follows the SGHyperMaterials convention used by anisotropicLatent.py /
+eval_brdf follows the convention used by anisotropicLatent.py /
 ubo_pbr.py: it returns the cosine-weighted brdf and the 6-tuple
 (brdf, predicted_normal, pdf, uv_offset, cos_theta_i_pred, cos_theta_o_pred)
 that brdf_plugin/mlp.py expects, so the renderer config uses

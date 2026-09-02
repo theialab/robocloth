@@ -21,6 +21,4 @@ normal_map: False # whether use normal map or sphere normals
 scale_factor: 1.0 # scale factor for pbr maps
 
 
-# pbr_texture_path: '/mnt/data/colin/colin/BRDF-Fipt/fabric_pattern_07_4k/textures'
-pbr_texture_path: /home/haoran/SGHyperMaterials/data/fabric_pattern_07_4k/textures
-#pbr_texture_path: /home/haoran/SGHyperMaterials/data/pbr_texture_denim/textures_denim
+pbr_texture_path: /absolute/path/to/pbr_textures/fabric_pattern_07_4k/textures   # PBR texture pack used to initialise the Disney-PBR baseline; not part of the HF release

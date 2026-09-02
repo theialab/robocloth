@@ -4,10 +4,11 @@
      Replicates the legacy procedural relight scene:
        mesh=onBars01_st_hp.ply mesh_scale=0.3, bar=pole_spheres_v4.obj (Cr,
        alpha 0.1), camera [0,0,-1.5] -> origin, fov 30, path max_depth 4.
-     Meshes are NOT bundled: $mesh_dir must point at the render_assets meshes
-     download.  Override the default below with the MESH_DIR env var. -->
+     Meshes are NOT bundled: $mesh_dir must point at the downloaded
+     render_assets/cloth_on_bar folder.  Override the default below with the
+     MESH_DIR env var. -->
 
-	<default name="mesh_dir" value="${MESH_DIR:-/media/raid/cloth/output/Misuba_rendering/output/render/felt01/cloth_candidates/meshes}"/>
+	<default name="mesh_dir" value="${MESH_DIR:-/absolute/path/to/render_assets/cloth_on_bar}"/>
 
 	<integrator type="path">
 		<integer name="max_depth" value="4"/>

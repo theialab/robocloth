@@ -1,6 +1,6 @@
 type: "LearnablePBRTexturedModel"
 module: "model.neural_brdf_refactored"
-# Disney PBR material for the "Ours dataset" (BRDF-Fipt learnable_pbr_texture_model,
+# Disney PBR material for the "Ours dataset" (training/models/neural_brdf_refactored.LearnablePBRTexturedModel,
 # disney=True). Fields mirror the ckpt's hyper_parameters.material exactly; the
 # analytic PBRDecoder ignores the `decoder` block (kept for parity / clean load).
 latent_dim: 24

@@ -1,3 +1,10 @@
+"""DEPRECATED — not imported anywhere in this repository.
+
+The maintained checkpoint loader is ``brdf_plugin.mlp.create_anisotropic_model``
+(fail-closed: absent files and key/shape mismatches raise). This legacy copy is
+kept only for reference and has been made fail-closed as well; do not add new
+call sites.
+"""
 import drjit as dr
 import mitsuba as mi
 import torch
@@ -133,24 +140,17 @@ def create_model(model_path=None, material_type="AnisotropicLatentTexturedModel"
         key_samples = list(cleaned_state_dict.keys())[:5]
         print(f"Example keys: {key_samples}")
         
+        # Fail closed: a checkpoint that does not match the model is an error,
+        # never a silently random-initialised material (which renders as noise).
         try:
-            model.load_state_dict(cleaned_state_dict)
-            print("Model weights loaded successfully")
-        except Exception as e:
-            print(f"Weight loading failed: {e}")
-            print("Attempting to load with strict=False mode...")
-            try:
-                model.load_state_dict(cleaned_state_dict, strict=False)
-                print("Model weights loaded successfully (non-strict mode)")
-            except Exception as e2:
-                print(f"Non-strict mode also failed: {e2}")
-                print("Using randomly initialized model")
-                return model
+            model.load_state_dict(cleaned_state_dict)   # strict: raises on missing/unexpected/mismatched keys
+        except RuntimeError as e:
+            raise RuntimeError(f"checkpoint {model_path} does not match {material_type}: {e}") from e
+        print("Model weights loaded successfully")
     else:
         if model_path:
-            print(f"Warning: Model file {model_path} does not exist, using randomly initialized model")
-        else:
-            print("Using randomly initialized AnisotropicLatentTexturedModel")
+            raise FileNotFoundError(f"checkpoint does not exist: {model_path}")
+        print("Using randomly initialized AnisotropicLatentTexturedModel")
     
     model.eval()
 
