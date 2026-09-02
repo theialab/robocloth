@@ -14,22 +14,35 @@
 #
 # The scalar result is parsed from the CSV logger output and written to
 #   $OUTPUT_ROOT/eval_results/<MAT_ID>_<TAG>.json
+# (atomically, via <name>.json.tmp + rename) together with provenance —
+# checkpoint path/size/mtime, git HEAD, timestamp, host, config identifiers —
+# so run_table_ours.sh can tell a stale result from a reusable one.
 #
 # Usage:
-#   DATA_ROOT=/path/to/capture_data bash scripts/milestone3/eval_stage2.sh <MAT_ID> <CKPT> [TAG]
+#   DATA_ROOT=/path/to/capture_data bash scripts/eval_stage2.sh <MAT_ID> <CKPT> [TAG]
 #
 #   <CKPT> is a trained stage-2 checkpoint, e.g.
-#     Stage-2-Finals/Ours/145/Ours_epoch112.ckpt        (released checkpoints), or
+#     checkpoints/stage2/RoboCloth/145/Ours_epoch112.ckpt   (released checkpoints), or
 #     $OUTPUT_ROOT/Stage2_Ours145_from_Ours_run_1/training/model_0.20_0.20/last.ckpt
 #   [TAG] labels the result file (default: checkpoint filename prefix before
 #     "_epoch", i.e. Ours/Bonn/MERL/PBR for the released checkpoints).
 #     TAG=PBR selects the Disney-PBR architecture; anything else the neural one.
 #
 # Knobs:
-#   SAVE_ALL_VIEWS=1   save images for every validation view (default: first 20)
+#   SAVE_ALL_VIEWS=1      save images for every validation view (default: first 20)
+#   CKPT_SHA256=1         also record the checkpoint's sha256 in the result JSON
+#   ROBOCLOTH_PYTHON=...  interpreter (default: `python` of the active env; the
+#                         generic PYTHON variable is deliberately ignored)
+#
+# Fails closed: interpreter not executable -> exit 2 (before anything runs);
+# checkpoint missing -> exit 4; a non-zero train.py exits this script with the
+# same code; no metrics.csv written by THIS run -> exit 3 (EXP_NAME is reused
+# across runs, so metrics.csv files left by earlier runs are never read);
+# no val/psnr in it -> exit 1. No JSON is written in any of these cases.
 # ---------------------------------------------------------------------------
 set -euo pipefail
-cd "$(dirname "$0")/../training"
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && pwd)
+cd "$SCRIPTS_DIR/../training"
 
 MAT_ID=${1:?usage: eval_stage2.sh <MAT_ID> <CKPT> [TAG]}
 CKPT=${2:?usage: eval_stage2.sh <MAT_ID> <CKPT> [TAG]}
@@ -39,6 +52,13 @@ DATA_ROOT=${DATA_ROOT:?set DATA_ROOT to the dataset root (folder containing <mat
 OUTPUT_ROOT=${OUTPUT_ROOT:-$PWD/outputs/milestone3}
 EXP_NAME=${EXP_NAME:-Eval_Ours${MAT_ID}_${TAG}}
 VALID_NUM=$([ "${SAVE_ALL_VIEWS:-0}" = "1" ] && echo -1 || echo 20)
+EXPERIMENT=$([ "$TAG" = "PBR" ] && echo eval_stage2_pbr || echo eval_stage2)
+PYTHON=${ROBOCLOTH_PYTHON:-python}
+COLLECT=$SCRIPTS_DIR/collect_eval_results.py   # owns the result-JSON contract
+
+[ -x "$(command -v "$PYTHON" || true)" ] \
+    || { echo "[eval_stage2] ERROR: interpreter not found or not executable: $PYTHON (set ROBOCLOTH_PYTHON)" >&2; exit 2; }
+[ -f "$CKPT" ] || { echo "[eval_stage2] ERROR: checkpoint not found: $CKPT" >&2; exit 4; }
 
 DATASET_FOLDER=$DATA_ROOT/$MAT_ID
 EMITTER_CALIB=${EMITTER_CALIB:-$DATASET_FOLDER/emitter_calibration.json}
@@ -46,8 +66,12 @@ EMITTER_CALIB=${EMITTER_CALIB:-$DATASET_FOLDER/emitter_calibration.json}
 
 EXP_DIR=$OUTPUT_ROOT/$EXP_NAME
 mkdir -p "$EXP_DIR"
+# The CSV logger writes $EXP_DIR/$EXP_NAME/version_<N>/metrics.csv, and EXP_NAME is reused
+# across runs (possibly with another checkpoint). Snapshot what is there now so that only
+# a metrics.csv that appears or changes after train.py can count as this run's output.
+PRIOR_METRICS=$("$PYTHON" "$COLLECT" --metrics-snapshot "$EXP_DIR/$EXP_NAME")
 
-python train.py +experiment=$([ "$TAG" = "PBR" ] && echo eval_stage2_pbr || echo eval_stage2) \
+"$PYTHON" train.py +experiment=$EXPERIMENT \
     dataset_folder="$DATASET_FOLDER" \
     renderer.emitter.direction_json="$EMITTER_CALIB" \
     output_folder="$OUTPUT_ROOT" \
@@ -59,22 +83,36 @@ python train.py +experiment=$([ "$TAG" = "PBR" ] && echo eval_stage2_pbr || echo
     '~model.logger.project' \
     "${@:4}"
 
-# ---- collect the scalar metrics from the CSV logger --------------------------
+# ---- collect the scalar metrics from THIS run's CSV logger output ------------
 RESULTS_DIR=$OUTPUT_ROOT/eval_results
 mkdir -p "$RESULTS_DIR"
-METRICS_CSV=$(ls -t "$EXP_DIR/$EXP_NAME"/version_*/metrics.csv 2>/dev/null | head -1)
-python - "$METRICS_CSV" "$RESULTS_DIR/${MAT_ID}_${TAG}.json" "$MAT_ID" "$TAG" "$CKPT" <<'EOF'
-import csv, json, sys
-csv_path, out_path, mat, tag, ckpt = sys.argv[1:6]
+# The JSON is written by collect_eval_results.write_result (scripts/), which owns the
+# result schema shared with run_table_ours.sh's stale-result check.
+PRIOR_METRICS=$PRIOR_METRICS "$PYTHON" - "$EXP_DIR/$EXP_NAME" "$RESULTS_DIR/${MAT_ID}_${TAG}.json" "$MAT_ID" "$TAG" \
+    "$CKPT" "$SCRIPTS_DIR" "$EXPERIMENT" "$DATASET_FOLDER" "$EXP_NAME" "$VALID_NUM" "${@:4}" <<'EOF'
+import csv, json, os, sys
+log_dir, out_path, mat, tag, ckpt, scripts_dir, experiment, dataset_folder, exp_name, valid_num = sys.argv[1:11]
+sys.path.insert(0, scripts_dir)
+from collect_eval_results import fresh_metrics_csv, write_result
+prior = json.loads(os.environ["PRIOR_METRICS"])          # metrics.csv files that predate train.py
+csv_path = fresh_metrics_csv(log_dir, prior)
+if csv_path is None:
+    print(f"[eval_stage2] ERROR: train.py exited 0 but wrote no new metrics.csv under {log_dir} "
+          f"({len(prior)} metrics.csv from earlier runs of {exp_name} ignored)", file=sys.stderr)
+    sys.exit(3)
 vals = {}
 with open(csv_path) as f:
     for row in csv.DictReader(f):
         for k, v in row.items():
             if v not in (None, "") and k.startswith("val/"):
                 vals[k] = float(v)
-res = {"material": mat, "model": tag, "ckpt": ckpt,
-       "val_psnr": vals.get("val/psnr"), "val_loss": vals.get("val/loss")}
-json.dump(res, open(out_path, "w"), indent=2)
+if vals.get("val/psnr") is None:
+    sys.exit(f"[eval_stage2] ERROR: no val/psnr logged in {csv_path} (val/ columns seen: {sorted(vals)})")
+res = write_result(out_path, material=mat, model=tag, ckpt=ckpt,
+                   val_psnr=vals["val/psnr"], val_loss=vals.get("val/loss"),
+                   experiment=experiment, dataset_folder=os.path.abspath(dataset_folder), exp_name=exp_name,
+                   valid_num=int(valid_num), metrics_csv=csv_path, overrides=sys.argv[11:])
+loss = f"{res['val_loss']:.4f}" if res["val_loss"] is not None else "n/a"
 print(f"[eval_stage2] material {mat} / {tag}: val/psnr = {res['val_psnr']:.2f} dB "
-      f"(val/loss = {res['val_loss']:.4f})  ->  {out_path}")
+      f"(val/loss = {loss})  ->  {out_path}")
 EOF

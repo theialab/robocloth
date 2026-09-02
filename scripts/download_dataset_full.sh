@@ -9,18 +9,39 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 DEST=${1:-$PWD/DATA_ROOT}
-REPO=koalapenguin/cloth-brdf
-IDS=${ROBOCLOTH_MATERIALS:-*}    # internal: restrict for testing
+REPO=koalapenguin/RoboCloth
+if [[ -n ${ROBOCLOTH_MATERIALS:-} ]]; then
+    read -r -a IDS <<< "$ROBOCLOTH_MATERIALS"
+else
+    IDS=({0..499})
+fi
+
+if (( ${#IDS[@]} == 0 )); then
+    echo "[download_dataset_full] ERROR: no material IDs requested" >&2
+    exit 1
+fi
 
 INCLUDES=(--include "globals/*")
-for id in $IDS; do INCLUDES+=(--include "materials/$id/*"); done
+for id in "${IDS[@]}"; do
+    if [[ ! $id =~ ^[0-9]+$ ]]; then
+        echo "[download_dataset_full] ERROR: invalid material ID: $id" >&2
+        exit 1
+    fi
+    INCLUDES+=(--include "materials/$id/*")
+done
 
 echo "[download_dataset_full] full dataset is ~3.5 TB — ensure disk space."
 mkdir -p "$DEST"
-hf download $REPO --repo-type dataset "${INCLUDES[@]}" --local-dir "$DEST"
+hf download "$REPO" --repo-type dataset "${INCLUDES[@]}" --local-dir "$DEST"
 cp -f "$DEST"/globals/* "$DEST"/
-for d in "$DEST"/materials/*/; do
-    id=$(basename "$d"); rm -rf "$DEST/$id"; mv "$d" "$DEST/$id"
+for id in "${IDS[@]}"; do
+    src="$DEST/materials/$id"
+    if [[ ! -d $src ]]; then
+        echo "[download_dataset_full] ERROR: requested material $id was not downloaded" >&2
+        exit 1
+    fi
+    rm -rf "$DEST/$id"
+    mv "$src" "$DEST/$id"
     if [ -f "$DEST/$id/hdr.tar" ]; then
         tar -xf "$DEST/$id/hdr.tar" -C "$DEST/$id" && rm "$DEST/$id/hdr.tar"
     fi

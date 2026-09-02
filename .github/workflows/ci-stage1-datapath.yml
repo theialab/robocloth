@@ -1,0 +1,99 @@
+# End-to-end stage-1 DATA PATH check (scripts/ci_stage1_datapath.sh):
+#   empty dir -> download two explicit materials with the real downloader
+#   -> validate the assembled layout -> one short stage-1 epoch.
+#
+# This job needs a SELF-HOSTED runner labelled `gpu` with an NVIDIA driver,
+# conda (or python3.10) on PATH, ~5 GB free disk and network access to
+# huggingface.co.  GitHub-hosted runners have no GPU, so the workflow is
+# manual (workflow_dispatch); uncomment the schedule once such a runner is
+# registered.  The dry-run harness in tests/ci/ covers the download ->
+# validation path and the training-step plumbing without a GPU or network.
+#
+# Data, hf cache and the job-local env live UNDER THE RUNNER WORKSPACE
+# ($GITHUB_WORKSPACE/.ci-data and .ci-env) rather than in runner.temp: the
+# beta-test requirement asks for the workspace, and actions/checkout's default
+# `git clean -ffdx` removes both at the start of the next run, so every run
+# starts from an empty data directory even when the final cleanup step did not
+# get to run (CI_FRESH=1 covers whatever is left).
+name: ci-stage1-datapath
+
+on:
+  workflow_dispatch:
+    inputs:
+      materials:
+        description: "Space-separated numeric material IDs to download"
+        default: "145 226"
+        required: true
+      train_batches:
+        description: "limit_train_batches for the single stage-1 epoch"
+        default: "50"
+        required: true
+  # schedule:
+  #   - cron: "0 6 * * 1"   # Mondays 06:00 UTC — weekly downloader canary
+
+concurrency:
+  group: ci-stage1-datapath
+  cancel-in-progress: false
+
+jobs:
+  stage1-datapath:
+    runs-on: [self-hosted, gpu]
+    timeout-minutes: 240
+    env:
+      ENV_PREFIX: ${{ github.workspace }}/.ci-env          # job-local, never a shared conda env
+      CI_ROOT: ${{ github.workspace }}/.ci-data            # data + hf cache + logs, see header
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create training environment (envs/training.txt, torch 2.5.1 cu121)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$ENV_PREFIX"
+          if command -v conda >/dev/null 2>&1; then
+            conda create -y --prefix "$ENV_PREFIX" python=3.10
+          else
+            python3.10 -m venv "$ENV_PREFIX"
+          fi
+          PY="$ENV_PREFIX/bin/python"
+          "$PY" -m pip install --upgrade pip
+          "$PY" -m pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
+          "$PY" -m pip install -r envs/training.txt
+          "$PY" - <<'PY'
+          import torch, pytorch_lightning as pl
+          assert pl.__version__ == "1.9.5", pl.__version__          # see CLAUDE.md: PL must stay 1.9.5
+          assert torch.cuda.is_available(), "no CUDA device visible on this runner"
+          print("torch", torch.__version__, "| PL", pl.__version__, "| GPU", torch.cuda.get_device_name(0))
+          PY
+          "$ENV_PREFIX/bin/hf" version
+
+      - name: Stage-1 data path (download -> validate -> one epoch)
+        shell: bash
+        env:
+          CI_DATA_ROOT: ${{ github.workspace }}/.ci-data/data
+          CI_OUTPUT_ROOT: ${{ github.workspace }}/.ci-data/out
+          CI_WIPE_PREFIX: ${{ github.workspace }}/.ci-data    # allow CI_FRESH to clear a stale run
+          CI_FRESH: "1"
+          MATERIALS: ${{ inputs.materials }}
+          CI_TRAIN_BATCHES: ${{ inputs.train_batches }}
+          ROBOCLOTH_PYTHON: ${{ github.workspace }}/.ci-env/bin/python
+          HF_HOME: ${{ github.workspace }}/.ci-data/hf_home
+          # HF_TOKEN: ${{ secrets.HF_TOKEN }}                   # dataset is public; only needed if it goes gated
+          CUDA_VISIBLE_DEVICES: "0"
+        run: bash scripts/ci_stage1_datapath.sh
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-stage1-datapath-logs
+          if-no-files-found: ignore
+          path: |
+            ${{ github.workspace }}/.ci-data/out/*.log
+            ${{ github.workspace }}/.ci-data/out/ci_training_list.txt
+            ${{ github.workspace }}/.ci-data/out/ci_stage1/**/metrics.csv
+
+      - name: Free runner disk (downloaded data + env)
+        if: always()
+        shell: bash
+        run: rm -rf "$CI_ROOT/data" "$CI_ROOT/hf_home" "$ENV_PREFIX"

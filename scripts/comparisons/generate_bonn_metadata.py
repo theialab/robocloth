@@ -5,8 +5,13 @@ Scans all matXXXX_xyz_rot000.exr files, reads (H, W) from the EXR header,
 and writes a single JSON file mapping mat_id -> num_points (= H * W).
 
 Usage:
-    python scripts/generate_bonn_metadata.py /media/raid/cloth/Bonn_train
-    python scripts/generate_bonn_metadata.py /media/raid/cloth/Bonn_val
+    python scripts/comparisons/generate_bonn_metadata.py /absolute/path/to/Bonn_train
+    python scripts/comparisons/generate_bonn_metadata.py /absolute/path/to/Bonn_val
+
+Run it once per downloaded folder (stage 1 reads Bonn_train, stage 2 and the
+evaluation read Bonn_val); the models (BonnLatentBRDF / BonnPBRLatentBRDF)
+and the renderer's Bonn wrapper size the per-material latent bank from it.
+Re-run it after adding materials to a folder.
 """
 
 import argparse
@@ -29,7 +34,7 @@ def get_exr_dimensions(filepath):
 def main():
     parser = argparse.ArgumentParser(description="Generate bonn_point_metadata.json")
     parser.add_argument("data_folder", type=str,
-                        help="Path to Bonn dataset folder (e.g. /media/raid/cloth/Bonn_train)")
+                        help="Path to a Bonn dataset folder (e.g. /absolute/path/to/Bonn_train)")
     args = parser.parse_args()
 
     root = Path(args.data_folder)

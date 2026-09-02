@@ -4,6 +4,9 @@
 #
 #   DATA_ROOT=/path/to/UBO2014 STAGE1_CKPT=.../stage1/Bonn.ckpt MODEL=Bonn \
 #       bash train_stage2_ubo.sh <material>              # e.g. felt01
+#
+#   DATA_ROOT is the flat folder of UBO2014 .btf files; download it from the
+#   University of Bonn BTFDBB with scripts/comparisons/download_ubo2014.sh.
 set -euo pipefail
 cd "$(dirname "$0")/../../training"
 MAT=${1:?usage: train_stage2_ubo.sh <material>}; shift || true

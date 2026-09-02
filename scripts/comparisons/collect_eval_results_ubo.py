@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
-"""Collect eval_stage2_ubo.sh results and compare against the paper table.
+"""Collect eval_stage2_ubo.sh results and check them against the paper table.
 
-Usage: python collect_eval_results_ubo.py <eval_results_ubo_dir>
+Usage:
+  python collect_eval_results_ubo.py <eval_results_ubo_dir> [--materials "felt01 felt03"]
+      [--models "Bonn"] [--tolerance-db 0.05] [--missing "felt01/Bonn ..."]
+  python collect_eval_results_ubo.py --reuse-check <result.json> <checkpoint>
 
 Prints the reproduced "Cross-dataset transfer to UBO2014" table (12 held-out
-materials) next to the values reported in the paper.
+materials) next to the values reported in the paper with a PASS/FAIL verdict
+per cell.  Same fail-closed contract and exit codes as scripts/collect_eval_results.py
+(6 = expected cell missing, 7 = beyond tolerance, 2 = bad arguments), which
+implements the table, the result-JSON schema and the --reuse-check.
 """
-import glob
-import json
 import os
 import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
+from collect_eval_results import Table, main  # noqa: E402  (scripts/collect_eval_results.py)
 
 # Paper: Table "Cross-dataset transfer to UBO2014" (12 held-out materials).
 # Columns: stage-1 decoder training source (+ Disney-PBR baseline).
@@ -30,47 +37,9 @@ PAPER = {
 PAPER_AVG = {"Ours": 36.76, "Bonn": 32.27, "MERL": 30.64, "PBR": 33.05}
 MODELS = ["Ours", "Bonn", "MERL", "PBR"]
 
-
-def main(results_dir: str) -> None:
-    got = {}
-    for path in glob.glob(os.path.join(results_dir, "*.json")):
-        with open(path) as f:
-            r = json.load(f)
-        if r.get("val_psnr") is not None:
-            got.setdefault(str(r["material"]), {})[r["model"]] = r["val_psnr"]
-
-    header = f"{'material':>9} | " + " | ".join(f"{m:>21}" for m in MODELS)
-    sub = f"{'':>9} | " + " | ".join(f"{'repro / paper / diff':>21}" for _ in MODELS)
-    print("\n=== Cross-dataset transfer to UBO2014 — PSNR (dB) ===")
-    print(header)
-    print(sub)
-    print("-" * len(header))
-
-    sums, counts = {m: 0.0 for m in MODELS}, {m: 0 for m in MODELS}
-    for mat in PAPER:
-        cells = []
-        for m in MODELS:
-            repro = got.get(mat, {}).get(m)
-            paper = PAPER[mat][m]
-            if repro is None:
-                cells.append(f"{'--':>7} / {paper:5.2f} /    --")
-            else:
-                sums[m] += repro
-                counts[m] += 1
-                cells.append(f"{repro:7.2f} / {paper:5.2f} / {repro - paper:+5.2f}")
-        print(f"{mat:>9} | " + " | ".join(cells))
-
-    avg_cells = []
-    for m in MODELS:
-        if counts[m] == len(PAPER):
-            avg = sums[m] / counts[m]
-            avg_cells.append(f"{avg:7.2f} / {PAPER_AVG[m]:5.2f} / {avg - PAPER_AVG[m]:+5.2f}")
-        else:
-            avg_cells.append(f"{'--':>7} / {PAPER_AVG[m]:5.2f} /    -- ({counts[m]}/{len(PAPER)})")
-    print("-" * len(header))
-    print(f"{'average':>9} | " + " | ".join(avg_cells))
-    print()
+UBO = Table("Cross-dataset transfer to UBO2014 — PSNR (dB)", PAPER, PAPER_AVG,
+            name_width=9, default_dir="eval_results_ubo")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "eval_results_ubo")
+    sys.exit(main(table=UBO))
