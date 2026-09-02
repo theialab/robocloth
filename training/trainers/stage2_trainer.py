@@ -258,7 +258,7 @@ class Stage2Trainer(pl.LightningModule):
             logging.error('Optimizer type not supported')
 
     def load_pbr_texture(self, pbr_texture_path):
-        pbr_folder = '/localhome/zla247/theia2_data/theia2_data/BRDF-Fipt/fabric_pattern_07_4k/textures'
+        pbr_folder = os.environ.get('ROBOCLOTH_PBR_TEXTURES', '/absolute/path/to/pbr_textures/fabric_pattern_07_4k/textures')  # PBR texture pack (not in the HF release)
         import cv2
         from PIL import Image
         import torchvision.transforms as T

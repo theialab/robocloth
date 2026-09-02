@@ -2,6 +2,9 @@ defaults:
   - base
 
 dataset_name: "ubo"
+# dataset_folder = the flat folder of UBO2014 .btf files (<root>/UBO2014)
+# produced by scripts/comparisons/download_ubo2014.sh — the BTFs come from the
+# University of Bonn BTFDBB, not redistributed by us.
 shape:
   type: "flat"
   center: [0.0, 0.0, 0.0]

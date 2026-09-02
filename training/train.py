@@ -28,6 +28,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 from renderer import ForwardRenderer
 from trainers import get_trainer_class
 from models.brdf import SvPBRBRDF
+from utils.checkpoint_io import load_checkpoint_file, extract_state_dict, load_state_dict_strict
 from torch.utils.data import DataLoader
 from datasets import (
     RealImageDenseDataset, RealValDataset, MultiMaterialDenseDataset,
@@ -36,7 +37,7 @@ from datasets import (
     UBOBTFTrainDataset, UBOBTFValDataset,
 )
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, open_dict
 from pytorch_lightning.strategies import DDPStrategy
 import importlib
 import warnings
@@ -44,6 +45,53 @@ import logging
 import cv2
 warnings.filterwarnings("ignore")
 logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
+
+# Explicit partial-load allowlists (utils/checkpoint_io.load_state_dict_strict).
+# Every key inside an allowlist must be present with a matching shape; keys
+# outside it are reported as intentionally skipped. Nothing else is tolerated.
+#   Stage-2 warm start / validate_on_stage1: exactly the shared BRDF decoder
+#   (the paper's decoder-only transfer; cross-arch warm starts work as long
+#   as the decoder MLP shape matches).
+DECODER_ONLY_PREFIXES = ('material.decoder.',)
+#   Stage-1 warm start: the whole material (decoder, latent bank, offsets).
+MATERIAL_PREFIXES = ('material.',)
+#   Evaluation: every weight, except the emitter buffers, which are rebuilt
+#   from the calibration files at construction time (shapes follow the data).
+EVAL_IGNORED_PREFIXES = ('emitter.',)
+
+
+def restore_evaluation_texture_resolution(cfg, checkpoint):
+    """Use the stage-2 texture resolution recorded in a checkpoint.
+
+    Lightning stores the composed Hydra config under ``hyper_parameters``.
+    Evaluation constructs the material before loading its tensors, so using
+    the current config's default resolution can otherwise create a latent
+    texture with the wrong shape.  Training remains controlled by the current
+    experiment config; only checkpoint evaluation restores this architectural
+    value automatically.
+    """
+    if not bool(cfg.model.get('test', False)) or int(cfg.model.get('stage', 1)) != 2:
+        return None
+
+    hparams = checkpoint.get('hyper_parameters') or {}
+    material_hparams = hparams.get('material', {}) if hasattr(hparams, 'get') else {}
+    saved_resolution = (
+        material_hparams.get('texture_resolution')
+        if hasattr(material_hparams, 'get') else None
+    )
+    if saved_resolution is None:
+        return None
+
+    saved_resolution = int(saved_resolution)
+    current_resolution = cfg.material.get('texture_resolution', None)
+    if current_resolution is None or int(current_resolution) != saved_resolution:
+        with open_dict(cfg.material):
+            cfg.material.texture_resolution = saved_resolution
+        print(
+            "[checkpoint config] restored material.texture_resolution="
+            f"{saved_resolution} for evaluation"
+        )
+    return saved_resolution
 
 def init_callbacks(cfg):
     checkpoint_monitor = hydra.utils.instantiate(cfg.model.checkpoint_monitor)
@@ -54,6 +102,25 @@ def init_callbacks(cfg):
 def main(cfg):
     # fix the seed
     pl.seed_everything(cfg.global_train_seed, workers=True)
+
+    # Fail closed on the checkpoint path itself: a set-but-missing file, or an
+    # evaluation without any checkpoint, must stop here instead of silently
+    # training / validating a randomly initialised model.
+    ckpt_path = cfg.model.ckpt_path or None
+    is_test = bool(cfg.model.get('test', False))
+    if is_test and ckpt_path is None:
+        raise ValueError("model.test=True requires model.ckpt_path (the checkpoint to evaluate)")
+    if ckpt_path is not None and not os.path.isfile(ckpt_path):
+        raise FileNotFoundError(f"model.ckpt_path does not exist: {ckpt_path}")
+
+    # A stage-2 checkpoint's latent-texture shape is architecture-critical.
+    # Read it before constructing the material, then reuse the same checkpoint
+    # object below so evaluation does not load a multi-GB file twice.
+    evaluation_checkpoint = None
+    if is_test and int(cfg.model.get('stage', 1)) == 2:
+        evaluation_checkpoint = load_checkpoint_file(ckpt_path, map_location='cpu')
+        restore_evaluation_texture_resolution(cfg, evaluation_checkpoint)
+
     print(f"[DIAG] About to create output dir: {cfg.exp_output_root_path}")
     os.makedirs(cfg.exp_output_root_path, exist_ok=True)
     print("[DIAG] Output dir created.")
@@ -96,41 +163,41 @@ def main(cfg):
     # Track whether to use Lightning's resume functionality
     resume_ckpt_path = None
     
-    if cfg.model.ckpt_path is not None and os.path.isfile(cfg.model.ckpt_path):
-        print(f"=> loading model checkpoint '{cfg.model.ckpt_path}'")
-        
+    if ckpt_path is not None:
+        print(f"=> loading model checkpoint '{ckpt_path}'")
+
         # If continue_training is enabled, use PyTorch Lightning's native resume
         # This will restore model weights, optimizer state, scheduler state, epoch, etc.
         continue_training = getattr(cfg.model, 'continue_training', False)
         if continue_training:
             print(f"=> continue_training=True: will resume full training state from checkpoint")
-            resume_ckpt_path = cfg.model.ckpt_path
+            resume_ckpt_path = ckpt_path
         else:
-            # Manual weight loading for transfer learning / partial loading
-            checkpoint = torch.load(cfg.model.ckpt_path, map_location='cpu', weights_only=False)
-            
+            # Manual weight loading for transfer learning / partial loading.
+            # Every branch goes through load_state_dict_strict: a missing,
+            # unexpected or shape-mismatched tensor raises, and partial loads
+            # are limited to the explicit allowlists at the top of this file.
+            checkpoint = evaluation_checkpoint
+            if checkpoint is None:
+                checkpoint = load_checkpoint_file(ckpt_path, map_location='cpu')
+            state_dict = extract_state_dict(checkpoint, source=ckpt_path)
+
             if stage == 2:
                 if cfg.model.test:
-                    # Filter out emitter parameters from checkpoint
-                    model_dict = model.state_dict()
-                    filtered_dict = {k: v for k, v in checkpoint['state_dict'].items() 
-                                     if 'emitter' not in k and k in model_dict}
-                    model_dict.update(filtered_dict)
-                    model.load_state_dict(model_dict)
-                    print(f"=> loaded model checkpoint successfully (excluding emitter). {len(filtered_dict)}/{len(checkpoint['state_dict'])} parameters loaded.")
+                    # Evaluation: every weight comes from the checkpoint; only
+                    # the emitter buffers are skipped (rebuilt at construction).
+                    report = load_state_dict_strict(
+                        model, state_dict, ignore_prefixes=EVAL_IGNORED_PREFIXES, source=ckpt_path)
+                    print(f"=> loaded model checkpoint successfully (excluding emitter). {len(report.loaded)}/{len(state_dict)} parameters loaded.")
+                    print(report.summary())
                 else:
-                    # Stage 2: Only load the decoder weights from checkpoint
-                    # Load material.decoder.* weights only (not latent codes)
-                    model_dict = model.state_dict()
-                    decoder_dict = {}
-                    for k, v in checkpoint['state_dict'].items():
-                        if 'material.decoder.' in k:
-                            if k in model_dict:
-                                decoder_dict[k] = v
-                    
-                    model_dict.update(decoder_dict)
-                    model.load_state_dict(model_dict)
-                    print(f"=> Stage 2: loaded decoder checkpoint successfully. {len(decoder_dict)}/{len([k for k in model_dict if 'material.decoder.' in k])} decoder parameters loaded.")
+                    # Stage 2: decoder-only warm start — load exactly the
+                    # material.decoder.* tensors (all of them, shapes checked);
+                    # latent texture / neural geometry / factor start fresh.
+                    report = load_state_dict_strict(
+                        model, state_dict, allow_prefixes=DECODER_ONLY_PREFIXES, source=ckpt_path)
+                    print(f"=> Stage 2: loaded decoder checkpoint successfully. {len(report.loaded)} decoder parameters loaded.")
+                    print(report.summary())
 
                     # Optionally override learnable_factor init (e.g. compensate for a
                     # decoder whose output range is far from the GT range).
@@ -144,22 +211,24 @@ def main(cfg):
                     use_latent_bank = getattr(cfg.material, 'use_latent_bank', False)
                     if use_latent_bank:
                         latent_bank_key = 'material.point_latent_bank.weight'
-                        if latent_bank_key in checkpoint['state_dict']:
-                            latent_weights = checkpoint['state_dict'][latent_bank_key]
-                            num_points, latent_dim = latent_weights.shape
-                            # Create embedding from checkpoint weights directly
-                            model.material.point_latent_bank = nn.Embedding(num_points, latent_dim)
-                            model.material.point_latent_bank.weight.data = latent_weights
-                            print(f"=> Stage 2: loaded latent bank from checkpoint: {num_points} x {latent_dim}")
-                        else:
-                            print(f"=> Stage 2: use_latent_bank=True but no latent bank weights found in checkpoint.")
-                    
+                        if latent_bank_key not in state_dict:
+                            # The model cannot run without a bank: fail here, not
+                            # later with an opaque error from a None module.
+                            raise RuntimeError(
+                                f"material.use_latent_bank=True but {ckpt_path} has no {latent_bank_key}")
+                        latent_weights = state_dict[latent_bank_key]
+                        num_points, latent_dim = latent_weights.shape
+                        # Create embedding from checkpoint weights directly
+                        model.material.point_latent_bank = nn.Embedding(num_points, latent_dim)
+                        model.material.point_latent_bank.weight.data = latent_weights
+                        print(f"=> Stage 2: loaded latent bank from checkpoint: {num_points} x {latent_dim}")
+
                     # If initialize_from_std is enabled, reinitialize latent texture using std from checkpoint's latent bank
                     initialize_from_std = getattr(cfg.material, 'initialize_from_std', False)
                     if initialize_from_std:
                         latent_bank_key = 'material.point_latent_bank.weight'
-                        if latent_bank_key in checkpoint['state_dict']:
-                            latent_weights = checkpoint['state_dict'][latent_bank_key]
+                        if latent_bank_key in state_dict:
+                            latent_weights = state_dict[latent_bank_key]
                             # latent_weights: [num_points, latent_dim]
                             # Last 6 dimensions have special meaning (normal + tangent), exclude them
                             brdf_latent_weights = latent_weights[:, :-6]
@@ -190,37 +259,39 @@ def main(cfg):
                     # are optimised from scratch on the val split (mirrors
                     # stage 2's non-test branch). Latent bank stays at the
                     # current model's fresh initialisation.
-                    model_dict = model.state_dict()
-                    decoder_dict = {}
-                    for k, v in checkpoint['state_dict'].items():
-                        if 'material.decoder.' in k:
-                            if k in model_dict:
-                                decoder_dict[k] = v
-                    model_dict.update(decoder_dict)
-                    model.load_state_dict(model_dict)
-                    print(f"=> Stage 1 (validate_on_stage1): loaded decoder checkpoint successfully. {len(decoder_dict)}/{len([k for k in model_dict if 'material.decoder.' in k])} decoder parameters loaded.")
+                    report = load_state_dict_strict(
+                        model, state_dict, allow_prefixes=DECODER_ONLY_PREFIXES, source=ckpt_path)
+                    print(f"=> Stage 1 (validate_on_stage1): loaded decoder checkpoint successfully. {len(report.loaded)} decoder parameters loaded.")
+                    print(report.summary())
                 else:
-                    # Stage 1: Only load material parameters
-                    model_dict = model.state_dict()
-                    pretrained_dict = {k: v for k, v in checkpoint['state_dict'].items() if k in model_dict and k.startswith('material.')}
+                    # Stage 1: load the whole material sub-tree (decoder, latent
+                    # bank, offsets) — all of it; trainer-side state stays fresh.
+                    state_dict = dict(state_dict)
 
                     # Debug: inject latents for one hardcoded material only (offset-aware)
                     debug_load_material_id = 1
                     latent_bank_key = 'material.point_latent_bank.weight'
-                    if cfg.data.debug and latent_bank_key in pretrained_dict:
-                        ckpt_latents = pretrained_dict.pop(latent_bank_key)   # [N_ckpt, D]
+                    if cfg.data.debug and latent_bank_key in state_dict:
+                        ckpt_latents = state_dict.pop(latent_bank_key)   # [N_ckpt, D]
                         if hasattr(model.material, 'material_offset_tensor'):
                             offset = model.material.material_offset_tensor[debug_load_material_id].item()
                         else:
                             offset = 0  # single-material mode: no global offset
                         n = ckpt_latents.shape[0]
-                        model_dict[latent_bank_key][offset:offset + n] = ckpt_latents
+                        # state_dict() tensors share storage with the parameters,
+                        # so this writes the rows into the live bank in place;
+                        # the bank then re-enters the dict so the strict scope
+                        # check sees it present (loading it onto itself is a no-op).
+                        bank = model.state_dict()[latent_bank_key]
+                        bank[offset:offset + n] = ckpt_latents
+                        state_dict[latent_bank_key] = bank
                         print(f"[Debug] Injected latents for material {debug_load_material_id}: "
                               f"ckpt rows 0:{n} → bank rows {offset}:{offset + n}")
 
-                    model_dict.update(pretrained_dict)
-                    model.load_state_dict(model_dict)
-                    print(f"=> loaded material checkpoint successfully. {len(pretrained_dict)}/{len([k for k in model_dict if k.startswith('material.')])} material parameters loaded.")
+                    report = load_state_dict_strict(
+                        model, state_dict, allow_prefixes=MATERIAL_PREFIXES, source=ckpt_path)
+                    print(f"=> loaded material checkpoint successfully. {len(report.loaded)} material parameters loaded.")
+                    print(report.summary())
     print("after trainer init")
     print("==> initializing data ...")
     validate_on_stage1 = getattr(cfg.model, 'validate_on_stage1', False) and (cfg.model.stage == 1) and (not cfg.model.test)

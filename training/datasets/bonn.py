@@ -588,7 +588,7 @@ class BonnDataset(IterableDataset):
             Visualize = False
             if Visualize:
                 # --- debug: save all images ordered by camera then light ------
-                _dbg_dir = f"/media/raid/cloth/output/BRDF/visualizations_debug/mat{mat_id:04d}"
+                _dbg_dir = os.path.join(os.environ.get("ROBOCLOTH_DEBUG_DIR", "./visualizations_debug"), f"mat{mat_id:04d}")
                 os.makedirs(_dbg_dir, exist_ok=True)
 
                 n_images = all_rgbs.shape[0]

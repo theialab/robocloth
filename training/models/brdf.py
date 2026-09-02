@@ -180,12 +180,15 @@ def load_pbr_texture(pbr_folder):
             rough = read_img(f"{cloth_name}_rough_4k.exr")      # [1,H,W] - Roughness map (EXR)
             nor_dx = read_img(f"{cloth_name}_nor_dx_4k.exr")    # [3,H,W] - Normal map X
             nor_gl = read_img(f"{cloth_name}_nor_gl_4k.exr")    # [3,H,W] - Normal map GL
-            # Save normal map as RGB image for reference
-            import cv2
-            import numpy as np
-            nor_gl_rgb = (nor_gl.permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
-            cv2.imwrite('./reference_normal.png', cv2.cvtColor(nor_gl_rgb, cv2.COLOR_RGB2BGR))
-            
+            # Optional debug dump of the normal map (opt-in: it writes a 4096^2 PNG
+            # into the working directory, which must never happen by default).
+            import os
+            if os.environ.get("ROBOCLOTH_DEBUG_TEXTURES"):
+                import cv2
+                import numpy as np
+                nor_gl_rgb = (nor_gl.permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
+                cv2.imwrite('./reference_normal.png', cv2.cvtColor(nor_gl_rgb, cv2.COLOR_RGB2BGR))
+
             # Combine all available channels for default fabric
             # [Color (3) + AO (3) + ARM (3) + Roughness (1) + Normal DX (1) + Normal GL (1)] = 12 channels
             tex = torch.cat([

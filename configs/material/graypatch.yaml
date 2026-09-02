@@ -16,5 +16,3 @@ prefliter: False
 inc_thresh_deg: 45.0 # incident angle > 30 degree
 view_thresh_deg: 45.0
 
-# pbr_texture_path: '/media/raid/zla247/BRDF-Fipt/fabric_pattern_07_4k/textures'
-# pbr_texture_path: /mnt/data/colin/colin/BRDF-Fipt/denim_fabric_03_4k/textures

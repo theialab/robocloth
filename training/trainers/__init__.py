@@ -18,6 +18,10 @@ TRAINER_REGISTRY = {
     },
     'bonn': {
         1: Stage1Trainer_Bonn,
+        # Intentional: the Bonn implementation uses one trainer for both
+        # phases.  For stage 2, train.py supplies BonnSingleMaterialDataset
+        # and stage2_bonn.yaml freezes the shared decoder.  The older
+        # Stage2Trainer_Bonn class is retained only for experiment history.
         2: Stage1Trainer_Bonn,
     },
     'ubo': {

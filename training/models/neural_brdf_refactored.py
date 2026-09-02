@@ -15,6 +15,7 @@ from pytorch_lightning import LightningModule
 import math
 # from nerfstudio.field_components import encoding
 from utils.ops import components_from_spherical_harmonics, num_sh_bases, D_GGX, fresnelSchlick, G_Smith, G_Smith_aniso, D_GGX_aniso
+from utils.checkpoint_io import load_checkpoint_file
 
 
 # ============================================================================
@@ -169,10 +170,12 @@ class LatentTexture(nn.Module):
         torch.save(self.params.data, path)
     
     def load(self, path: str):
-        """Load latent texture from file"""
-        loaded = torch.load(path)
-        assert loaded.shape == self.params.shape, \
-            f"Shape mismatch: {loaded.shape} vs {self.params.shape}"
+        """Load latent texture from file (fails closed: missing file or wrong shape raises)"""
+        loaded = load_checkpoint_file(path, map_location=self.params.device)
+        if not torch.is_tensor(loaded) or loaded.shape != self.params.shape:
+            got = tuple(loaded.shape) if torch.is_tensor(loaded) else type(loaded).__name__
+            raise RuntimeError(
+                f"latent texture {path}: expected a tensor of shape {tuple(self.params.shape)}, got {got}")
         self.params.data = loaded
 
 
@@ -1955,7 +1958,7 @@ class BonnLatentBRDF(LightningModule):
 
     Generate the metadata file with::
 
-        python scripts/generate_bonn_metadata.py /path/to/Bonn_train
+        python scripts/comparisons/generate_bonn_metadata.py /path/to/Bonn_train
     """
 
     def __init__(self, cfg):
@@ -2055,7 +2058,7 @@ class BonnLatentBRDF(LightningModule):
         if not meta_path.exists():
             raise FileNotFoundError(
                 f"{meta_path} not found.  Run:\n"
-                f"  python scripts/generate_bonn_metadata.py {data_folder}")
+                f"  python scripts/comparisons/generate_bonn_metadata.py {data_folder}")
 
         with open(meta_path) as f:
             raw = json.load(f)
@@ -2151,7 +2154,7 @@ class BonnLatentBRDF(LightningModule):
         if not meta_path.exists():
             raise FileNotFoundError(
                 f"{meta_path} not found.  Run:\n"
-                f"  python scripts/generate_bonn_metadata.py {data_folder}")
+                f"  python scripts/comparisons/generate_bonn_metadata.py {data_folder}")
         with open(meta_path) as f:
             raw = json.load(f)
         key = str(mat_id)
@@ -3421,7 +3424,7 @@ class BonnPBRLatentBRDF(LightningModule):
         if not meta_path.exists():
             raise FileNotFoundError(
                 f"{meta_path} not found.  Run:\n"
-                f"  python scripts/generate_bonn_metadata.py {data_folder}")
+                f"  python scripts/comparisons/generate_bonn_metadata.py {data_folder}")
 
         with open(meta_path) as f:
             raw = json.load(f)

@@ -15,9 +15,6 @@ filter_observations: False # whether to filter observations by XY region
 point_subsample_ratio: 1.0 # fraction of pixels to keep per material (1.0 = all); used by BonnDataset/BonnValDataset and mirrored into cfg.material.point_subsample_ratio
 
 metadata_path: ${dataset_folder}/scan_log.json
-# metadata_path: /media/raid/cloth/capture_data/BRDF_recon_Oct21_color_checker_5_distance_grey_center/scan_log.json
-# metadata_path: /media/raid/cloth/No_cable_capture_Sep22/BRDF_recon_Sep30/scan_log.json
-# metadata_path: /media/raid/cloth/capture_data/BRDF_recon_Oct20_white_test/scan_log.json
 camera_metadata_path: ${dataset_folder}/rotated_camera.json
 handeye_refiner: False # whether to learn the refiner
 
