@@ -1,6 +1,35 @@
+# Python
 __pycache__/
 *.pyc
+.pytest_cache/
+*.egg-info/
+
+# Run outputs: Hydra run dirs (training/outputs, reconstruction/outputs,
+# rendering/outputs), experiment logs, checkpoints, smoke renders
 outputs/
+training/outputs/
+reconstruction/outputs/
+rendering/outputs/
+rendering/.smoke_outputs/
+multirun/
+.hydra/
 wandb/
 lightning_logs/
 *.ckpt
+# debug image written into the working directory by training/models/brdf.py
+reference_normal.png
+
+# Download targets and Hugging Face caches (hf download --local-dir writes
+# <dir>/.cache/huggingface/), CI scratch of .github/workflows
+DATA_ROOT/
+FIXTURE_ROOT/
+.cache/
+.ci-data/
+.ci-env/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Kept in git: assets/ (README figures) and docs/media/ (capture video)

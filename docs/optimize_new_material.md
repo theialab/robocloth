@@ -14,20 +14,28 @@ pip install -r envs/training.txt
 
 ## 2. Download one material + the pretrained decoder
 
+Run these commands from the repository root and set absolute paths. The
+training launchers change into `training/`, so relative environment paths are
+not reliable.
+
 ```bash
-# dense capture data for material 145 (~9 GB) -> ./DATA_ROOT
-bash scripts/download_material.sh 145 ./DATA_ROOT
+export DATA_ROOT=/absolute/path/to/DATA_ROOT
+export CKPT_DIR=/absolute/path/to/robocloth-checkpoints
+export OUTPUT_ROOT=/absolute/path/to/robocloth-output
+
+# dense capture data for material 145 (~9 GB)
+bash scripts/download_material.sh 145 "$DATA_ROOT"
 
 # pretrained stage-1 decoder (RoboCloth prior, ~2 GB)
-hf download koalapenguin/RoboCloth --repo-type dataset \
-    --include "checkpoints/stage1/Ours.ckpt" --local-dir ./ckpts
+hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+    --include "checkpoints/stage1/Ours.ckpt" --local-dir "$CKPT_DIR"
 ```
 
 ## 3. Run stage 2
 
 ```bash
-DATA_ROOT=./DATA_ROOT OUTPUT_ROOT=./outputs \
-STAGE1_CKPT=./ckpts/checkpoints/stage1/Ours.ckpt \
+DATA_ROOT="$DATA_ROOT" OUTPUT_ROOT="$OUTPUT_ROOT" \
+STAGE1_CKPT="$CKPT_DIR/checkpoints/stage1/Ours.ckpt" \
     bash scripts/train_stage2.sh 145
 ```
 
@@ -35,11 +43,15 @@ This freezes the decoder and optimizes the 2048² latent texture, the
 parallax-aware query, and a per-channel scale for the chosen material. All
 hyperparameters live in `configs/experiment/stage2.yaml` (paper defaults;
 edit there to change epochs, batch size, texture resolution, ...).
+The chosen texture resolution is saved in the checkpoint and is restored
+automatically by `scripts/eval_stage2.sh`; evaluation therefore constructs a
+matching latent texture even when the current config default has changed.
 
 Progress: validation renders of held-out views appear every 2 epochs under
-`outputs/stage2_145_from_Ours/images/` (`result_view_*_psnr*.png` next to
-their `gt_view_*` references). Checkpoints:
-`outputs/stage2_145_from_Ours/training/model_0.20_0.20/last.ckpt`.
+`$OUTPUT_ROOT/stage2_145_from_Ours/images/` (`result_view_*_psnr*.png` next
+to their `gt_view_*` references). Checkpoints:
+`$OUTPUT_ROOT/stage2_145_from_Ours/training/model_0.20_0.20/last.ckpt`
+(`EXP_NAME` renames the run folder).
 
 Hardware: one large GPU (48 GB works) and a large-memory node — the loader
 preloads all ~590 training views (> 512 GB host RAM for a full material).
@@ -47,8 +59,8 @@ preloads all ~590 training views (> 512 GB host RAM for a full material).
 ## 4. Check the result
 
 ```bash
-DATA_ROOT=./DATA_ROOT OUTPUT_ROOT=./outputs bash scripts/eval_stage2.sh 145 \
-    outputs/stage2_145_from_Ours/training/model_0.20_0.20/last.ckpt
+DATA_ROOT="$DATA_ROOT" OUTPUT_ROOT="$OUTPUT_ROOT" bash scripts/eval_stage2.sh 145 \
+    "$OUTPUT_ROOT/stage2_145_from_Ours/training/model_0.20_0.20/last.ckpt"
 ```
 
 prints the held-out PSNR and saves GT/prediction pairs. To render the

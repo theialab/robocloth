@@ -1,0 +1,34 @@
+# Citation metadata for the RoboCloth code release (Citation File Format 1.2.0).
+# The paper is under double-blind review, so the author list is a placeholder
+# until it appears. The lines between the PUBLIC-ONLY markers carry
+# de-anonymizing URLs and must be removed from the anonymous submission zip.
+cff-version: 1.2.0
+message: "If you use this code or the RoboCloth dataset, please cite it as below."
+title: "RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction"
+type: software
+license: Apache-2.0
+authors:
+  - name: "Anonymous"
+keywords:
+  - cloth
+  - BRDF
+  - SVBRDF
+  - neural materials
+  - dataset
+  - Mitsuba 3
+abstract: >-
+  500 real cloth materials captured robotically under calibrated camera and
+  light configurations and reconstructed as neural BRDFs with a two-stage
+  pipeline (a shared BRDF decoder prior, then a dense per-material latent
+  texture), plus a Mitsuba 3 renderer for the released materials.
+# PUBLIC-ONLY:BEGIN
+url: "https://colinzhenli.github.io/BRDF-Fipt/"
+repository-code: "https://github.com/colinzhenli/robocloth"
+# PUBLIC-ONLY:END
+preferred-citation:
+  type: unpublished
+  title: "RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction"
+  authors:
+    - name: "Anonymous"
+  year: 2026
+  notes: "Under review."
