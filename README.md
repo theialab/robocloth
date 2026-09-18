@@ -15,15 +15,15 @@ Material Dataset for Neural Reflectance Reconstruction*.
 [Zhen (Colin) Li](https://colinzhenli.github.io)<sup>1\*</sup>,
 Haoran Qin<sup>2\*</sup>,
 [Francesco Di Sario](https://scholar.google.com/citations?user=wjOMl_8AAAAJ)<sup>3,1</sup>,
-[Daniel Rebain](http://drebain.com/)<sup>4</sup>,
-[Andrea Tagliasacchi](https://taiya.github.io)<sup>1,5</sup>
+[Daniel Rebain](http://drebain.com/)<sup>4,5</sup>,
+[Andrea Tagliasacchi](https://taiya.github.io)<sup>1,5,6</sup>
 
 <sup>1</sup> Simon Fraser University &nbsp;&nbsp; <sup>2</sup> Westlake University &nbsp;&nbsp; <sup>3</sup> University of Torino &nbsp;&nbsp;
-<sup>4</sup> University of British Columbia &nbsp;&nbsp; <sup>5</sup> University of Toronto
+<sup>4</sup> University of British Columbia &nbsp;&nbsp; <sup>5</sup> Wayve &nbsp;&nbsp; <sup>6</sup> University of Toronto
 
 <sup>\*</sup> Co-first authors
 
-**International Conference on 3D Vision (3DV) 2027** &nbsp;&middot;&nbsp; Project page: <https://theialab.github.io/robocloth/>
+**In submission to the International Conference on 3D Vision (3DV) 2027** &nbsp;&middot;&nbsp; Project page: <https://theialab.github.io/robocloth/>
 <!-- PUBLIC-ONLY:END -->
 
 ![Left: the robotic capture rig with one captured frame inset. Right: held-out RoboCloth materials path-traced as the fabrics of a room scene.](assets/teaser.png)
@@ -193,11 +193,11 @@ listed in the
 If you use this code, the dataset or the checkpoints, please cite:
 
 ```bibtex
-@inproceedings{li2027robocloth,
-  title     = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
-  author    = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
-  booktitle = {International Conference on 3D Vision (3DV)},
-  year      = {2027}
+@misc{li2027robocloth,
+  title  = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
+  author = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
+  year   = {2027},
+  note   = {In submission to the International Conference on 3D Vision (3DV)}
 }
 ```
 

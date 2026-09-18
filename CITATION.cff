@@ -16,10 +16,10 @@ authors:
     affiliation: "University of Torino"
   - family-names: "Rebain"
     given-names: "Daniel"
-    affiliation: "University of British Columbia"
+    affiliation: "University of British Columbia and Wayve"
   - family-names: "Tagliasacchi"
     given-names: "Andrea"
-    affiliation: "Simon Fraser University"
+    affiliation: "Simon Fraser University, Wayve and University of Toronto"
 keywords:
   - cloth
   - BRDF
@@ -48,5 +48,5 @@ preferred-citation:
       given-names: "Daniel"
     - family-names: "Tagliasacchi"
       given-names: "Andrea"
-  collection-title: "International Conference on 3D Vision (3DV)"
+  collection-title: "In submission to the International Conference on 3D Vision (3DV)"
   year: 2027
