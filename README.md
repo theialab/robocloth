@@ -13,13 +13,13 @@ Material Dataset for Neural Reflectance Reconstruction*.
 [![Checkpoints and assets on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Checkpoints%20%26%20assets-RoboCloth--assets-ffb000)](https://huggingface.co/datasets/koalapenguin/RoboCloth-assets)
 
 [Zhen (Colin) Li](https://colinzhenli.github.io)<sup>1\*</sup>,
-Haoran Qin<sup>1\*</sup>,
-[Francesco Di Sario](https://scholar.google.com/citations?user=wjOMl_8AAAAJ)<sup>2,1</sup>,
-[Daniel Rebain](http://drebain.com/)<sup>3</sup>,
-[Andrea Tagliasacchi](https://taiya.github.io)<sup>1,4</sup>
+Haoran Qin<sup>2\*</sup>,
+[Francesco Di Sario](https://scholar.google.com/citations?user=wjOMl_8AAAAJ)<sup>3,1</sup>,
+[Daniel Rebain](http://drebain.com/)<sup>4</sup>,
+[Andrea Tagliasacchi](https://taiya.github.io)<sup>1,5</sup>
 
-<sup>1</sup> Simon Fraser University &nbsp;&nbsp; <sup>2</sup> University of Torino &nbsp;&nbsp;
-<sup>3</sup> University of British Columbia &nbsp;&nbsp; <sup>4</sup> University of Toronto
+<sup>1</sup> Simon Fraser University &nbsp;&nbsp; <sup>2</sup> Westlake University &nbsp;&nbsp; <sup>3</sup> University of Torino &nbsp;&nbsp;
+<sup>4</sup> University of British Columbia &nbsp;&nbsp; <sup>5</sup> University of Toronto
 
 <sup>\*</sup> Co-first authors
 
