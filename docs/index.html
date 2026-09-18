@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============================  HERO  ============================ -->
+<section>
+    <div class="jumbotron text-center mt-0">
+        <div class="container">
+            <h2><b>RoboCloth</b><br>A Large-Scale Real Cloth Material Dataset<br>for Neural Reflectance Reconstruction</h2>
+            <p class="subtitle">500 real cloth materials &middot; ~580 calibrated (camera, light) configurations each &middot; 16-bit HDR &middot; renderable neural BRDFs</p>
+
+            <p class="author-list">
+                <a href="https://colinzhenli.github.io" target="_blank" rel="noopener">Zhen (Colin) Li</a><sup>1*</sup>,
+                Haoran Qin<sup>1*</sup>,
+                <a href="https://scholar.google.com/citations?user=wjOMl_8AAAAJ" target="_blank" rel="noopener">Francesco Di Sario</a><sup>2,1</sup>,
+                <a href="http://drebain.com/" target="_blank" rel="noopener">Daniel Rebain</a><sup>3</sup>,
+                <a href="https://taiya.github.io" target="_blank" rel="noopener">Andrea Tagliasacchi</a><sup>1,4</sup>
+                <br>
+                <span class="affiliations">
+                    <sup>1</sup>&nbsp;Simon Fraser University &nbsp;&nbsp;
+                    <sup>2</sup>&nbsp;University of Torino &nbsp;&nbsp;
+                    <sup>3</sup>&nbsp;University of British Columbia &nbsp;&nbsp;
+                    <sup>4</sup>&nbsp;University of Toronto
+                </span>
+                <br>
+                <span class="footnote">* Co-first authors</span>
+            </p>
+
+            <p class="venue"><strong>International Conference on 3D Vision (3DV) 2027</strong></p>
+
+            <div class="btn-group-row">
+                <!-- TODO(maintainer): point Paper at the arXiv / camera-ready PDF once it is public. -->
+                <a class="btn-pill" href="#"><i class="fa-solid fa-file"></i> Paper</a>
+                <a class="btn-pill" href="https://github.com/theialab/robocloth" target="_blank" rel="noopener">
+                    <i class="fa-brands fa-github"></i> Code
+                </a>
+                <a class="btn-pill" href="https://huggingface.co/datasets/koalapenguin/RoboCloth" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-database"></i> Dataset
+                </a>
+                <a class="btn-pill" href="https://huggingface.co/datasets/koalapenguin/RoboCloth-assets" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-cube"></i> Checkpoints &amp; assets
+                </a>
+                <!-- TODO(maintainer): swap to the standalone project video once it is published. -->
+                <a class="btn-pill" href="#video"><i class="fa-solid fa-play"></i> Video</a>
+                <a class="btn-pill" href="#preview"><i class="fa-solid fa-images"></i> Dataset Preview</a>
+                <a class="btn-pill" href="#citation"><i class="fa-solid fa-quote-right"></i> Citation</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================  TEASER + ABSTRACT  ============================ -->
+<section id="abstract" class="page-section">
+    <h3>Overview</h3>
+    <div class="section-rule"></div>
+
+    <!-- Teaser figure — shows images/teaser.png when present. If the file
+         is missing the <img>'s onerror swaps in the placeholder text so
+         the page still looks intentional. -->
+    <div class="teaser-box" id="teaser" style="padding:0; border:none; background:transparent;">
+        <img src="images/teaser.png?v=34" alt="RoboCloth teaser figure"
+             style="max-width:100%; display:block; margin:0 auto; border-radius:8px;"
+             onerror="this.parentNode.innerHTML='&lt;div style=&quot;padding:2rem;border:1px dashed var(--border);border-radius:8px;color:var(--muted);text-align:center&quot;&gt;&lt;strong&gt;Teaser placeholder&lt;/strong&gt;&lt;br&gt;&lt;span style=&quot;font-size:0.88rem&quot;&gt;Drop a figure at &lt;code&gt;webpage/images/teaser.png&lt;/code&gt; to enable.&lt;/span&gt;&lt;/div&gt;';">
+    </div>
+
+    <!-- Capture-system video (~88 MB). Like the Stage-2 demo it is hosted on
+         Hugging Face (koalapenguin/RoboCloth-assets, media/) and streamed from
+         its CDN, so the Pages branch stays small. A gitignored local copy may
+         live at docs/videos/capture_314_5x.mp4 for offline preview. -->
+    <div id="video" style="text-align:center; margin-top:2.2rem;">
+        <h4 style="font-weight:700; margin-bottom:0.9rem;">The Capture System in Action</h4>
+        <video id="capture-demo" autoplay loop muted playsinline controls preload="auto"
+               style="max-width:100%; height:auto; display:block; margin:0 auto; border-radius:8px;">
+            <source src="https://huggingface.co/datasets/koalapenguin/RoboCloth-assets/resolve/main/media/capture_314_5x.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <p style="font-size:0.88rem; color:var(--muted); margin-top:0.6rem;">
+            A real video of our capture system at work.
+            <b>Left:</b> the robotic acquisition setup &mdash; two arms sweeping the
+            camera and area light above the turntable.
+            <b>Right:</b> the camera's live view as each image is captured.
+        </p>
+    </div>
+    <script>
+      // Same autoplay-retry pattern as the Stage-2 demo below.
+      (function () {
+        var v = document.getElementById('capture-demo');
+        if (!v) return;
+        v.muted = true;
+        var play = function () {
+          var p = v.play();
+          if (p && p.catch) p.catch(function () { /* blocked — controls remain */ });
+        };
+        play();
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(function (es) {
+            es.forEach(function (e) { if (e.isIntersecting) play(); });
+          }, { threshold: 0.25 }).observe(v);
+        }
+      })();
+    </script>
+
+    <p class="lead-text">
+        <b>RoboCloth</b> is a real-captured dataset of cloth materials
+        designed for inverse-rendering, SVBRDF estimation, and material
+        learning. Each material is captured under
+        <b>588 (camera, light) configurations</b> using a robot arm carrying
+        an HDR camera that traces an arc above a rotating turntable while
+        a second arm sweeps a calibrated area light over a plane covering
+        the upper hemisphere. We release accurate hand-eye and turntable
+        calibration, sample-size metadata, and a Croissant manifest at
+        <a href="https://huggingface.co/datasets/koalapenguin/RoboCloth" target="_blank">HuggingFace</a>.
+    </p>
+</section>
+
+<!-- ============================  MAIN VISUALIZATION SLOT  ============================ -->
+<section id="main-viz" class="page-section">
+    <h3>Inverse-Rendering Results</h3>
+    <div class="section-rule"></div>
+    <!-- TODO(viewer): This is a stop-gap rendering VIDEO. Replace it with an
+         INTERACTIVE viewer once final results are ready — e.g. a real-photo vs.
+         predicted comparison slider with draggable re-lighting, rendered live
+         in-browser, instead of a pre-baked mp4. -->
+    <!-- NOTE(hosting): cloth_with_sphere_final.mp4 (~160 MB) is hosted on Hugging Face
+         (koalapenguin/RoboCloth, web/) and streamed from its CDN below. It is NOT in git
+         (GitHub rejects files >100 MB; GitHub Pages won't serve Git LFS). A gitignored
+         local copy lives at docs/videos/ for offline preview — to use it, swap the src
+         back to "videos/cloth_with_sphere_final.mp4". -->
+    <div style="text-align:center">
+        <video id="stage2-demo" autoplay loop muted playsinline controls preload="auto"
+               style="max-width:100%; height:auto; display:block; margin:0 auto; border-radius:8px;">
+            <source src="https://huggingface.co/datasets/koalapenguin/RoboCloth-assets/resolve/main/media/web/cloth_with_sphere_final.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <p style="font-size:0.88rem; color:var(--muted); margin-top:0.6rem;">
+            Stage-2 neural-BRDF rendering &amp; re-lighting demo &mdash; a cloth material
+            relit on a sphere alongside the captured scene <em>(preview)</em>.
+        </p>
+    </div>
+    <script>
+      // Autoplay the Stage-2 demo muted + looping; retry when it scrolls into
+      // view (some browsers defer autoplay for off-screen / low-power cases).
+      (function () {
+        var v = document.getElementById('stage2-demo');
+        if (!v) return;
+        v.muted = true;              // required: browsers block autoplay with sound
+        var play = function () {
+          var p = v.play();
+          if (p && p.catch) p.catch(function () { /* blocked — controls remain */ });
+        };
+        play();
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(function (es) {
+            es.forEach(function (e) { if (e.isIntersecting) play(); });
+          }, { threshold: 0.25 }).observe(v);
+        }
+      })();
+    </script>
+</section>
+
+<!-- ============================  DATASET PREVIEW  ============================ -->
+<section id="preview" class="page-section">
+    <h3>Dataset Preview</h3>
+    <div class="section-rule"></div>
+    <p class="lead-text" style="text-align:center;color:var(--muted);">
+        The dataset is split into a <b>train</b> set and a <b>test</b> set
+        following the official lists in
+        <code>globals/training_list_500.txt</code> /
+        <code>globals/test_list_500.txt</code>.
+        20 train and 5 test materials are shown as thumbnails below;
+        every one of the remaining materials is linked further down so
+        you can browse all <b id="train-total">…</b>&nbsp;+&nbsp;<b id="test-total">…</b>
+        without leaving this page.
+    </p>
+
+    <!-- Train preview -->
+    <h4 class="split-heading">
+        <span class="split-chip train">Train</span>
+        <span class="split-heading-tail">20 of <b id="train-count">…</b> shown</span>
+    </h4>
+    <div id="train-preview-grid" class="preview-grid">
+        <div class="status-line"><span class="spinner"></span> Loading preview manifest…</div>
+    </div>
+
+    <!-- Test preview -->
+    <h4 class="split-heading" style="margin-top:2.5rem">
+        <span class="split-chip test">Test</span>
+        <span class="split-heading-tail">5 of <b id="test-count">…</b> shown</span>
+    </h4>
+    <div id="test-preview-grid" class="preview-grid"></div>
+
+    <!-- Full ID lists -->
+    <h4 class="split-heading" style="margin-top:3rem">
+        <span class="split-chip train">Train</span>
+        <span class="split-heading-tail">all material IDs</span>
+    </h4>
+    <div id="train-all-list" class="id-pill-list"></div>
+
+    <h4 class="split-heading" style="margin-top:2rem">
+        <span class="split-chip test">Test</span>
+        <span class="split-heading-tail">all material IDs</span>
+    </h4>
+    <div id="test-all-list" class="id-pill-list"></div>
+</section>
+
+<script>
+    // Mirror the counts header (the bigger top numbers) into the inline
+    // heading suffixes so they stay in sync with the manifest.
+    document.addEventListener("DOMContentLoaded", () => {
+        const sync = (from, to) => {
+            const obs = new MutationObserver(() => {
+                const t = document.getElementById(to);
+                if (t) t.textContent = document.getElementById(from).textContent;
+            });
+            const src = document.getElementById(from);
+            if (src) obs.observe(src, { childList: true, characterData: true, subtree: true });
+        };
+        sync("train-total", "train-count");
+        sync("test-total",  "test-count");
+    });
+</script>
+
+<!-- ============================  TRAINING PIPELINE  ============================ -->
+<section class="page-section">
+    <h3>Neural Decoder Training Pipeline</h3>
+    <div class="section-rule"></div>
+    <div style="text-align:center">
+        <img src="images/pipeline.png?v=34" alt="Two-stage neural BRDF decoder training pipeline"
+             style="max-width:100%; height:auto; display:block; margin:0 auto; border-radius:8px;">
+    </div>
+</section>
+
+<!-- ============================  CITATION  ============================ -->
+<section id="citation" class="page-section">
+    <h3>Citation</h3>
+    <div class="section-rule"></div>
+    <pre class="citation-block">@inproceedings{li2027robocloth,
+  title     = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
+  author    = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
+  booktitle = {International Conference on 3D Vision (3DV)},
+  year      = {2027}
+}</pre>
+</section>
+
+<footer>
+    Page template loosely inspired by
+    <a href="https://oppo-us-research.github.io/OpenIllumination/" target="_blank">OpenIllumination</a>.
+    Dataset assets stream directly from the public
+    <a href="https://huggingface.co/datasets/koalapenguin/RoboCloth" target="_blank">Hugging Face dataset repository</a>;
+    checkpoints, renders and videos from
+    <a href="https://huggingface.co/datasets/koalapenguin/RoboCloth-assets" target="_blank">RoboCloth-assets</a>.
+    Code: <a href="https://github.com/theialab/robocloth" target="_blank">github.com/theialab/robocloth</a>.
+</footer>
+
+<!-- Cache-bust JS files (bump ?v= when any of them changes). -->
+<script src="js/config.js?v=34"></script>
+<script src="js/transforms.js?v=34"></script>
+<script src="js/tar_reader.js?v=34"></script>
+<script src="js/hdr_display.js?v=34"></script>
+<script src="js/main.js?v=34"></script>
+
+</body>
+</html>

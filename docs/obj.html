@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RoboCloth — Material Viewer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="material-detail">
+
+    <div class="detail-header">
+        <div class="title-block">
+            <h1 id="title">Material <span id="material-id">…</span></h1>
+            <div class="subtitle" id="subtitle">
+                <span class="spinner"></span> Loading metadata…
+            </div>
+        </div>
+        <div class="detail-nav">
+            <a class="btn-pill" href="index.html"><i class="fa-solid fa-house"></i> Main page</a>
+            <a class="btn-pill" id="btn-hf" target="_blank" rel="noopener"
+               title="Open this material's folder on HuggingFace">
+                <i class="fa-solid fa-cloud-arrow-down"></i> HuggingFace
+            </a>
+            <button class="btn-pill" id="btn-prev" title="Previous material">
+                <i class="fa-solid fa-arrow-left"></i> Prev
+            </button>
+            <button class="btn-pill" id="btn-next" title="Next material">
+                Next <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+
+        <!-- LEFT — image + sliders -->
+        <div>
+            <div class="image-panel">
+                <div class="image-wrap">
+                    <canvas id="image-canvas"></canvas>
+                </div>
+                <div class="image-meta">
+                    <div>
+                        <span class="spinner" id="img-spinner" style="display:none"></span>
+                        <code id="meta-filename">—</code>
+                    </div>
+                    <div>
+                        camera <code id="meta-camera">—</code>
+                        · light <code id="meta-light">—</code>
+                        · turn <code id="meta-turn">—</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slider-panel" style="margin-top:1rem">
+                <div style="color:var(--muted);font-size:0.84rem;line-height:1.45;margin-bottom:0.85rem">
+                    Drag any slider to navigate the
+                    <b style="color:var(--brand)">~580 capture configurations</b>
+                    of this material. The image, both 3D scenes, and the
+                    selection markers update together.
+                </div>
+
+                <div class="slider-group">
+                    <label class="slider-label" for="slider-frame">
+                        <b>Capture index</b>
+                        <span class="value-tag" id="frame-tag">—</span>
+                    </label>
+                    <input type="range" id="slider-frame" min="0" max="0" step="1" value="0">
+                </div>
+
+                <div class="slider-group">
+                    <label class="slider-label" for="slider-camera">
+                        <b>Camera trajectory</b>
+                        <span class="value-tag" id="cam-tag">—</span>
+                    </label>
+                    <input type="range" id="slider-camera" min="0" max="0" step="1" value="0">
+                </div>
+
+                <div class="slider-group">
+                    <label class="slider-label" for="slider-light">
+                        <b>Light position</b>
+                        <span class="value-tag" id="light-tag">—</span>
+                    </label>
+                    <input type="range" id="slider-light" min="0" max="0" step="1" value="0">
+                </div>
+
+                <div class="slider-group">
+                    <label class="slider-label" for="slider-turn">
+                        <b>Turntable angle</b>
+                        <span class="value-tag" id="turn-tag">—</span>
+                    </label>
+                    <input type="range" id="slider-turn" min="0" max="0" step="1" value="0">
+                </div>
+
+                <div class="controls-row" style="align-items:center">
+                    <button class="btn-mini" id="btn-rand">
+                        <i class="fa-solid fa-shuffle"></i> Random
+                    </button>
+                    <button class="btn-mini" id="btn-crop" title="Toggle crop to material bbox">
+                        <i class="fa-solid fa-crop-simple"></i> Crop
+                    </button>
+                    <button class="btn-mini" id="btn-expmore" title="Brighter">
+                        <i class="fa-solid fa-lightbulb"></i> +
+                    </button>
+                    <button class="btn-mini" id="btn-expless" title="Dimmer">
+                        <i class="fa-regular fa-lightbulb"></i> −
+                    </button>
+                    <span style="color:var(--muted);font-size:0.82rem;line-height:1">
+                        Adjust display exposure
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT — two scenes, both combine camera + light.
+             Panel 1 expresses everything in the camera-arm base (base1);
+             the light arm's positions are brought in via the calibrated
+             base2_to_base1. No turntable rotation is undone, so this is
+             the physical layout at the moment of each capture.
+             Panel 2 then undoes the turntable rotation around the
+             calibrated turntable centre+axis to produce the world0
+             frame that the trained model actually uses. -->
+        <div class="right-column">
+            <div style="color:var(--muted);font-size:0.82rem;line-height:1.4;padding:0 0.2rem 0.6rem">
+                Drag to orbit, scroll to zoom.
+                Camera (<span style="color:#3367d6">blue</span>) and
+                light (<span style="color:#eab308">yellow</span>)
+                markers follow the slider selection.
+            </div>
+
+            <div class="viz-panel">
+                <div class="viz-title">
+                    <b>Original capture positions</b>
+                </div>
+                <canvas id="viz-base1"></canvas>
+            </div>
+
+            <div class="viz-panel">
+                <div class="viz-title">
+                    <b>Material local frame</b>
+                </div>
+                <canvas id="viz-world0"></canvas>
+            </div>
+
+            <div class="viz-panel">
+                <div class="viz-title"><b>Material info</b></div>
+                <div class="material-info">
+                    <div class="info-row">
+                        <span class="info-label">Sample size</span>
+                        <span class="info-value" id="info-size">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Thickness</span>
+                        <span class="info-value" id="info-thickness">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Mean colour</span>
+                        <span class="info-value" id="info-color">
+                            <span class="color-swatch" id="color-swatch"></span>
+                            <code id="color-hex">—</code>
+                        </span>
+                    </div>
+
+                    <div class="info-row" style="flex-direction:column;align-items:stretch;gap:0.35rem;margin-top:0.5rem">
+                        <span class="info-label">BRDF value range (per channel)</span>
+
+                        <div class="channel-bar ch-r">
+                            <span class="channel-label">R</span>
+                            <div class="channel-track">
+                                <div class="channel-fill" id="rfill"></div>
+                            </div>
+                            <span class="channel-range">
+                                <code id="rmin">—</code><span class="dash">–</span><code id="rmax">—</code>
+                            </span>
+                        </div>
+                        <div class="channel-bar ch-g">
+                            <span class="channel-label">G</span>
+                            <div class="channel-track">
+                                <div class="channel-fill" id="gfill"></div>
+                            </div>
+                            <span class="channel-range">
+                                <code id="gmin">—</code><span class="dash">–</span><code id="gmax">—</code>
+                            </span>
+                        </div>
+                        <div class="channel-bar ch-b">
+                            <span class="channel-label">B</span>
+                            <div class="channel-track">
+                                <div class="channel-fill" id="bfill"></div>
+                            </div>
+                            <span class="channel-range">
+                                <code id="bmin">—</code><span class="dash">–</span><code id="bmax">—</code>
+                            </span>
+                        </div>
+
+                        <div class="channel-axis">
+                            <span>0</span><span>65 535</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    Streamed from
+    <a href="https://huggingface.co/datasets/koalapenguin/RoboCloth" target="_blank">koalapenguin/RoboCloth</a>
+    via HTTP Range requests · no server.
+</footer>
+
+<!-- Three.js + OrbitControls.
+     Pin to r0.140.2 — last version with a working UMD examples/js/controls/
+     build. r0.148+ ships only the ESM (`examples/jsm/`) form which would
+     require import-maps. -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.2/examples/js/controls/OrbitControls.js"></script>
+
+<!-- Cache-busting query suffixes: bump this number whenever a .js file
+     changes so browsers don't serve a stale copy. -->
+<script src="js/config.js?v=34"></script>
+<script src="js/transforms.js?v=34"></script>
+<script src="js/tar_reader.js?v=34"></script>
+<script src="js/hdr_display.js?v=34"></script>
+<script src="js/viz.js?v=34"></script>
+<script src="js/obj.js?v=34"></script>
+
+</body>
+</html>

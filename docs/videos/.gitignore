@@ -1,0 +1,6 @@
+# Page videos are hosted EXTERNALLY (Hugging Face koalapenguin/RoboCloth-assets)
+# and embedded in index.html. They are deliberately NOT committed:
+#   - GitHub rejects any file >100 MB on push.
+#   - GitHub Pages does not serve Git LFS objects (it would serve the pointer file).
+# Keep local copies under docs/videos/ only for LOCAL preview.
+*.mp4
