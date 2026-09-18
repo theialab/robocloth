@@ -8,11 +8,22 @@ Code, models and data for the paper *RoboCloth: A Large-Scale Real Cloth
 Material Dataset for Neural Reflectance Reconstruction*.
 
 <!-- PUBLIC-ONLY:BEGIN -->
-[![Project page](https://img.shields.io/badge/Project-Page-1f6feb)](https://colinzhenli.github.io/BRDF-Fipt/)
+[![Project page](https://img.shields.io/badge/Project-Page-1f6feb)](https://theialab.github.io/robocloth/)
 [![Dataset on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-RoboCloth-ffb000)](https://huggingface.co/datasets/koalapenguin/RoboCloth)
 [![Checkpoints and assets on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Checkpoints%20%26%20assets-RoboCloth--assets-ffb000)](https://huggingface.co/datasets/koalapenguin/RoboCloth-assets)
 
-Anonymous authors — paper under review.
+[Zhen (Colin) Li](https://colinzhenli.github.io)<sup>1\*</sup>,
+Haoran Qin<sup>1\*</sup>,
+[Francesco Di Sario](https://scholar.google.com/citations?user=wjOMl_8AAAAJ)<sup>2,1</sup>,
+[Daniel Rebain](http://drebain.com/)<sup>3</sup>,
+[Andrea Tagliasacchi](https://taiya.github.io)<sup>1,4</sup>
+
+<sup>1</sup> Simon Fraser University &nbsp;&nbsp; <sup>2</sup> University of Torino &nbsp;&nbsp;
+<sup>3</sup> University of British Columbia &nbsp;&nbsp; <sup>4</sup> University of Toronto
+
+<sup>\*</sup> Co-first authors
+
+**International Conference on 3D Vision (3DV) 2027** &nbsp;&middot;&nbsp; Project page: <https://theialab.github.io/robocloth/>
 <!-- PUBLIC-ONLY:END -->
 
 ![Left: the robotic capture rig with one captured frame inset. Right: held-out RoboCloth materials path-traced as the fabrics of a room scene.](assets/teaser.png)
@@ -179,17 +190,18 @@ listed in the
 
 ## Citation
 
-The paper is under double-blind review. Until it appears, please cite this
-repository via [CITATION.cff](CITATION.cff) or:
+If you use this code, the dataset or the checkpoints, please cite:
 
 ```bibtex
-@misc{robocloth2026,
-  title  = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
-  author = {Anonymous},
-  year   = {2026},
-  note   = {Under review}
+@inproceedings{li2027robocloth,
+  title     = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
+  author    = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
+  booktitle = {International Conference on 3D Vision (3DV)},
+  year      = {2027}
 }
 ```
+
+Machine-readable metadata: [CITATION.cff](CITATION.cff).
 
 ## License
 

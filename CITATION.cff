@@ -1,14 +1,25 @@
 # Citation metadata for the RoboCloth code release (Citation File Format 1.2.0).
-# The paper is under double-blind review, so the author list is a placeholder
-# until it appears. The lines between the PUBLIC-ONLY markers carry
-# de-anonymizing URLs and must be removed from the anonymous submission zip.
 cff-version: 1.2.0
 message: "If you use this code or the RoboCloth dataset, please cite it as below."
 title: "RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction"
 type: software
 license: Apache-2.0
 authors:
-  - name: "Anonymous"
+  - family-names: "Li"
+    given-names: "Zhen"
+    affiliation: "Simon Fraser University"
+  - family-names: "Qin"
+    given-names: "Haoran"
+    affiliation: "Simon Fraser University"
+  - family-names: "Di Sario"
+    given-names: "Francesco"
+    affiliation: "University of Torino"
+  - family-names: "Rebain"
+    given-names: "Daniel"
+    affiliation: "University of British Columbia"
+  - family-names: "Tagliasacchi"
+    given-names: "Andrea"
+    affiliation: "Simon Fraser University"
 keywords:
   - cloth
   - BRDF
@@ -21,14 +32,21 @@ abstract: >-
   light configurations and reconstructed as neural BRDFs with a two-stage
   pipeline (a shared BRDF decoder prior, then a dense per-material latent
   texture), plus a Mitsuba 3 renderer for the released materials.
-# PUBLIC-ONLY:BEGIN
-url: "https://colinzhenli.github.io/BRDF-Fipt/"
-repository-code: "https://github.com/colinzhenli/robocloth"
-# PUBLIC-ONLY:END
+url: "https://theialab.github.io/robocloth/"
+repository-code: "https://github.com/theialab/robocloth"
 preferred-citation:
-  type: unpublished
+  type: conference-paper
   title: "RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction"
   authors:
-    - name: "Anonymous"
-  year: 2026
-  notes: "Under review."
+    - family-names: "Li"
+      given-names: "Zhen"
+    - family-names: "Qin"
+      given-names: "Haoran"
+    - family-names: "Di Sario"
+      given-names: "Francesco"
+    - family-names: "Rebain"
+      given-names: "Daniel"
+    - family-names: "Tagliasacchi"
+      given-names: "Andrea"
+  collection-title: "International Conference on 3D Vision (3DV)"
+  year: 2027

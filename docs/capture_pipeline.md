@@ -61,7 +61,7 @@ the end). The full-resolution version is on the project page.
 
 <!-- PUBLIC-ONLY:BEGIN -->
 Project page (full-resolution capture video and demos):
-<https://colinzhenli.github.io/BRDF-Fipt/>
+<https://theialab.github.io/robocloth/>
 <!-- PUBLIC-ONLY:END -->
 
 ### Hardware
