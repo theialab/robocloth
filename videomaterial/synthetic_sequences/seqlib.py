@@ -178,9 +178,12 @@ def write_bitmap_pair(mi, image, png_path, exr_path=None):
     if not np.isfinite(arr).all():
         raise RuntimeError(f"non-finite radiance in {Path(png_path).name}")
     png = np.nan_to_num(arr / (1.0 + arr), nan=0.0, posinf=0.0, neginf=0.0)
-    mi.util.write_bitmap(str(png_path), mi.Bitmap(png))
+    # write_async=False is REQUIRED: mi.util.write_bitmap defaults to a background-thread write,
+    # so MANIFEST.sha256 would sometimes hash a file that is still being flushed (seen on the last
+    # frame of a sequence, which fails `sha256sum -c` after the transfer).
+    mi.util.write_bitmap(str(png_path), mi.Bitmap(png), write_async=False)
     if exr_path is not None:
-        mi.util.write_bitmap(str(exr_path), mi.Bitmap(arr))
+        mi.util.write_bitmap(str(exr_path), mi.Bitmap(arr), write_async=False)
     return {"linear_min": float(arr.min()), "linear_max": float(arr.max()),
             "linear_mean": float(arr.mean()), "finite": True}
 
