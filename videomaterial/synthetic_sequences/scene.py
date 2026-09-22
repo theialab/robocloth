@@ -39,13 +39,16 @@ def transform_to_list(T):
     return np.array(T.matrix, dtype=np.float64).reshape(4, 4).tolist()
 
 
-def sensor_dict(camera_pos, fov_deg, width, height):
+def sensor_dict(camera_pos, fov_deg, width, height, rfilter=None):
+    film = {"type": "hdrfilm", "width": int(width), "height": int(height),
+            "pixel_format": "rgb", "component_format": "float32"}
+    if rfilter:   # exp-005 / material renders keep Mitsuba's default (gaussian); checks use "box"
+        film["rfilter"] = {"type": rfilter}
     return {
         "type": "perspective", "fov": float(fov_deg), "fov_axis": "y",
         "to_world": look_at_matrix(camera_pos),
         "sampler": {"type": "independent"},
-        "film": {"type": "hdrfilm", "width": int(width), "height": int(height),
-                 "pixel_format": "rgb", "component_format": "float32"},
+        "film": film,
     }
 
 
@@ -81,7 +84,7 @@ def white_lambert_scene_dict(camera_pos, light_pos, fov_deg, width, height, inte
     return {
         "type": "scene",
         "integrator": {"type": "path", "max_depth": int(max_depth)},
-        "sensor": sensor_dict(camera_pos, fov_deg, width, height),
+        "sensor": sensor_dict(camera_pos, fov_deg, width, height, rfilter="box"),
         "cloth": {"type": "rectangle", "to_world": T().rotate([1, 0, 0], -90).scale(SAMPLE_HALF_EXTENT),
                   "bsdf": {"type": "diffuse", "reflectance": {"type": "rgb", "value": [1.0, 1.0, 1.0]}}},
         "light": {"type": "point", "position": [float(x) for x in light_pos],
