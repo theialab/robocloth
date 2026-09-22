@@ -1,7 +1,7 @@
 """Camera / light trajectory sampler for the RoboCloth synthetic material sequences (exp-015).
 
 Conventions (sample frame, identical to exp-005): origin at the sample centre, +Y is the sample
-normal, +X is the u axis, +Z the v axis; ``theta`` is the polar angle from +Y, ``phi`` the
+normal, +X is the u axis, -Z the v axis (texture v grows towards -Z); ``theta`` is the polar angle from +Y, ``phi`` the
 azimuth from +X towards +Z. Directions are unit vectors ``(sin t cos p, cos t, sin t sin p)``.
 
 Sampling lives on the equal-area (Lambert azimuthal) disk, ``r = sqrt(2) * sin(theta / 2)``:

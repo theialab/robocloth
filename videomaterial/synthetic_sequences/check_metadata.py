@@ -61,7 +61,7 @@ def derive(meta, rec):
     I = float(meta["light"]["intensity_rgb"][0])
     E = np.where(inside, I * cos_i / r2, 0.0)
     return {"o": o, "d": d, "hit": hit, "inside": inside, "wi": wi, "cos_i": cos_i, "r2": r2, "E": E,
-            "uv": np.stack([(hit[..., 0] + he[0]) / (2 * he[0]), (hit[..., 2] + he[1]) / (2 * he[1])], -1)}
+            "uv": np.stack([(hit[..., 0] + he[0]) / (2 * he[0]), (he[1] - hit[..., 2]) / (2 * he[1])], -1)}  # Mitsuba: v grows towards -Z
 
 
 def boundary_distance(mask):
