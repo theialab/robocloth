@@ -52,32 +52,28 @@ def sensor_dict(camera_pos, fov_deg, width, height, rfilter=None):
     }
 
 
-BALL_CENTER = [-1.15, 0.35, 0.0]
-BALL_RADIUS = 0.35
+BALL_CENTER = [0.0, 0.0, 0.0]
+BALL_RADIUS = 0.5
 
 
 def ball_scene_dict(camera_pos, light_pos, fov_deg, width, height, intensity=20.0,
-                    ball_roughness=0.3, ground_roughness=0.15, max_depth=4):
-    """Visualisation scene with the SAME geometry as the material scene: ground plane at y = 0 with a
-    glossy patch of the sample's size (half-extent 0.75) at the origin, so the light's reflection appears
-    at the mirror point exactly where the material sample would show its specular peak; a grey ball to
-    the side (centre (-1.15, 0.35, 0), radius 0.35) for shading and cast-shadow cues; the exp-005 point
-    light. The light position is drawn as an overlay in make_visualization.py."""
+                    ball_roughness=0.3, ground_roughness=None, max_depth=2):
+    """Trajectory-visualisation scene as approved by Zhen (2026-09-22): grey principled ball of radius
+    0.5 CENTRED at the origin on a grey diffuse ground at y = -0.5, lit by the exp-005 point light.
+    With a fixed camera the ball stays centred in every frame; the trajectory shows as the moving
+    highlight and shadow. max_depth 2 = direct lighting only: it removes the fireflies that
+    interreflection paths produce with a point light, at no visible cost in this scene."""
     import mitsuba as mi
     T = mi.ScalarTransform4f
     return {
         "type": "scene",
         "integrator": {"type": "path", "max_depth": int(max_depth)},
         "sensor": sensor_dict(camera_pos, fov_deg, width, height),
-        "ground": {"type": "rectangle", "to_world": T().rotate([1, 0, 0], -90).scale(10.0),
-                   "bsdf": {"type": "diffuse", "reflectance": {"type": "rgb", "value": [0.28, 0.28, 0.28]}}},
-        "sample_patch": {"type": "rectangle",
-                         "to_world": T().translate([0.0, 0.002, 0.0]).rotate([1, 0, 0], -90).scale(SAMPLE_HALF_EXTENT),
-                         "bsdf": {"type": "principled", "base_color": {"type": "rgb", "value": [0.5, 0.5, 0.5]},
-                                  "roughness": float(ground_roughness), "specular": 0.6}},
         "ball": {"type": "sphere", "radius": BALL_RADIUS, "center": BALL_CENTER,
                  "bsdf": {"type": "principled", "base_color": {"type": "rgb", "value": [0.6, 0.6, 0.6]},
                           "roughness": float(ball_roughness), "specular": 0.5}},
+        "ground": {"type": "rectangle", "to_world": T().translate([0.0, -0.5, 0.0]).rotate([1, 0, 0], -90).scale(10.0),
+                   "bsdf": {"type": "diffuse", "reflectance": {"type": "rgb", "value": [0.4, 0.4, 0.4]}}},
         "light": {"type": "point", "position": [float(x) for x in light_pos],
                   "intensity": {"type": "rgb", "value": [intensity] * 3}},
     }
