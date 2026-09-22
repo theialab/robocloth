@@ -36,14 +36,14 @@ def index_html(root: Path, setup: str):
 <style>body{{font-family:system-ui,sans-serif;max-width:1400px;margin:2rem auto;padding:0 1rem;color:#1B1E24}}
 video,img{{max-width:100%;display:block}} section{{margin:2rem 0;border-top:1px solid #ddd;padding-top:1rem}} h2{{font-size:1.1rem}}</style>
 <h1>{setup} — {SETUP_DIR[setup]} — trajectory visualisations</h1>
-<p>Grey principled ball (radius 0.5) on a grey ground; the small bright sphere is the light (radius 0.04, power of a point light with intensity 20 at r = 3). Right panel: equal-area disk of the moving element's hemisphere — full path (colour = time), ● current pose, ★ mirror direction of the fixed element, ◎ fixed element. Fixed element at θ 45°, φ 90°, r 3. Camera fov_y 35°, 832×480, 81 frames at 15 fps. Seeds and every parameter are in each clip's metadata.json (schema v2).</p>
+<p>Same geometry as the material scene: ground at y = 0 with a glossy patch of the sample's size at the origin (roughness 0.15) so the light's reflection appears exactly where the material sample would show its specular peak; a grey ball to the side for shading and shadow; the exp-005 point light (intensity 20, r = 3). The yellow ring (or border arrow) marks the light's position. Right panel: equal-area disk of the moving element's hemisphere — full path (colour = time), ● current pose, ★ mirror direction of the fixed element, ◎ fixed element. Fixed element at θ 45°, φ 90°, r 3. Camera fov_y 35°, 832×480, 81 frames at 15 fps. Seeds and every parameter are in each clip's metadata.json (schema v2).</p>
 <p><a href="all_classes_contact_sheet.png">all_classes_contact_sheet.png</a></p>
 {''.join(rows)}"""
     (root / "index.html").write_text(html)
     # Markdown twin for VS Code's built-in preview (renders images and <video> tags with relative paths;
     # no HTTP server needed on the fileserver)
     md = [f"# {setup} — {SETUP_DIR[setup]} — trajectory visualisations", "",
-          "Grey PBR ball (r 0.5) on a grey ground; the bright dot is the light. Right panel: equal-area disk of the moving element's hemisphere — path (colour = time), ● current pose, ★ mirror direction, ◎ fixed element. Fixed element θ 45° φ 90° r 3; camera fov_y 35°, 832×480, 81 frames at 15 fps. Seeds and parameters: each clip's `metadata.json`.", "",
+          "Ground at y = 0 with a glossy sample-sized patch at the origin (the highlight lands where the material sample would show its specular peak) and a grey ball to the side; exp-005 point light. Yellow ring / border arrow = light position. Right panel: equal-area disk of the moving element's hemisphere — path (colour = time), ● current pose, ★ mirror direction, ◎ fixed element. Fixed element θ 45° φ 90° r 3; camera fov_y 35°, 832×480, 81 frames at 15 fps. Seeds and parameters: each clip's `metadata.json`.", "",
           "![all classes](all_classes_contact_sheet.png)", ""]
     for c in clips:
         m = json.loads((c / "metadata.json").read_text()); tr = m["trajectory"]

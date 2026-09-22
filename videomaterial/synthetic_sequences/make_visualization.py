@@ -50,6 +50,35 @@ def inset_figure(meta, recs, i, size_px):
     return Image.fromarray(img)
 
 
+def project(meta, rec, point):
+    """Pixel of a world point under the metadata camera (convention of check_metadata.py). None if behind."""
+    K = np.array(meta["camera"]["intrinsics_K"]); c2w = np.array(rec["camera"]["c2w"], dtype=np.float64)
+    w2c = np.linalg.inv(c2w); pc = w2c[:3, :3] @ np.asarray(point, dtype=np.float64) + w2c[:3, 3]
+    if pc[2] <= 1e-6:
+        return None
+    return (K[0, 2] - K[0, 0] * pc[0] / pc[2], K[1, 2] - K[1, 1] * pc[1] / pc[2])
+
+
+def draw_light_overlay(img, meta, rec):
+    """Yellow ring at the light's image position; if it is outside the frame, an arrow on the border."""
+    d = ImageDraw.Draw(img); W, H = img.size
+    uv = project(meta, rec, rec["light"]["position"])
+    if uv is None:
+        return img
+    u, v = uv
+    if 0 <= u < W and 0 <= v < H:
+        r = 9; d.ellipse([u - r, v - r, u + r, v + r], outline=(255, 210, 60), width=3)
+        d.text((u + 12, v - 8), "light", fill=(255, 210, 60))
+    else:  # arrow from the centre towards the off-screen light, clipped to the border
+        cx, cy = W / 2, H / 2; dx, dy = u - cx, v - cy
+        t = min((W / 2 - 20) / abs(dx) if dx else 9e9, (H / 2 - 20) / abs(dy) if dy else 9e9)
+        ex, ey = cx + dx * t, cy + dy * t
+        d.line([ex - dx * t * 0.12, ey - dy * t * 0.12, ex, ey], fill=(255, 210, 60), width=3)
+        d.ellipse([ex - 6, ey - 6, ex + 6, ey + 6], fill=(255, 210, 60))
+        d.text((min(max(ex - 30, 4), W - 70), min(max(ey - 22, 4), H - 16)), "light ↗", fill=(255, 210, 60))
+    return img
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("sequence_dir"); ap.add_argument("--fps", type=int, default=15); ap.add_argument("--crf", type=int, default=18)
@@ -63,12 +92,14 @@ def main():
     frames = []
     for i, r in enumerate(recs):
         left = Image.open(d / r["files"]["png"]).convert("RGB")
+        if meta.get("mode") == "ball":
+            left = draw_light_overlay(left, meta, r)
         right = inset_figure(meta, recs, i, H)
         canvas = Image.new("RGB", (left.width + right.width, H), (252, 252, 250))
         canvas.paste(left, (0, 0)); canvas.paste(right, (left.width, 0))
         canvas.save(comp_dir / f"frame_{r['index']:03d}.png"); frames.append(canvas)
     name = f"{d.name}_visualization.mp4"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(a.fps), "-i", str(comp_dir / "frame_%03d.png"),
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(a.fps), "-pattern_type", "glob", "-i", str(comp_dir / "frame_*.png"),
                     "-c:v", "libx264", "-preset", "slow", "-crf", str(a.crf), "-pix_fmt", "yuv420p",
                     "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", "-movflags", "+faststart", str(d / name)], check=True)
     # contact sheet: a.contact frames evenly spaced, 3 per row

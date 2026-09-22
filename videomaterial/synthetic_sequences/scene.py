@@ -52,25 +52,34 @@ def sensor_dict(camera_pos, fov_deg, width, height, rfilter=None):
     }
 
 
+BALL_CENTER = [-1.15, 0.35, 0.0]
+BALL_RADIUS = 0.35
+
+
 def ball_scene_dict(camera_pos, light_pos, fov_deg, width, height, intensity=20.0,
-                    ball_roughness=0.3, marker_radius=0.04, max_depth=4):
+                    ball_roughness=0.3, ground_roughness=0.15, max_depth=4):
+    """Visualisation scene with the SAME geometry as the material scene: ground plane at y = 0 with a
+    glossy patch of the sample's size (half-extent 0.75) at the origin, so the light's reflection appears
+    at the mirror point exactly where the material sample would show its specular peak; a grey ball to
+    the side (centre (-1.15, 0.35, 0), radius 0.35) for shading and cast-shadow cues; the exp-005 point
+    light. The light position is drawn as an overlay in make_visualization.py."""
     import mitsuba as mi
     T = mi.ScalarTransform4f
     return {
         "type": "scene",
         "integrator": {"type": "path", "max_depth": int(max_depth)},
         "sensor": sensor_dict(camera_pos, fov_deg, width, height),
-        "ball": {"type": "sphere", "radius": 0.5, "center": [0.0, 0.0, 0.0],
+        "ground": {"type": "rectangle", "to_world": T().rotate([1, 0, 0], -90).scale(10.0),
+                   "bsdf": {"type": "diffuse", "reflectance": {"type": "rgb", "value": [0.28, 0.28, 0.28]}}},
+        "sample_patch": {"type": "rectangle",
+                         "to_world": T().translate([0.0, 0.002, 0.0]).rotate([1, 0, 0], -90).scale(SAMPLE_HALF_EXTENT),
+                         "bsdf": {"type": "principled", "base_color": {"type": "rgb", "value": [0.5, 0.5, 0.5]},
+                                  "roughness": float(ground_roughness), "specular": 0.6}},
+        "ball": {"type": "sphere", "radius": BALL_RADIUS, "center": BALL_CENTER,
                  "bsdf": {"type": "principled", "base_color": {"type": "rgb", "value": [0.6, 0.6, 0.6]},
                           "roughness": float(ball_roughness), "specular": 0.5}},
-        "ground": {"type": "rectangle",
-                   "to_world": T().translate([0.0, -0.5, 0.0]).rotate([1, 0, 0], -90).scale(10.0),
-                   "bsdf": {"type": "diffuse", "reflectance": {"type": "rgb", "value": [0.4, 0.4, 0.4]}}},
-        # The visible marker IS the light: a small emissive sphere whose radiance L = I / (pi r^2)
-        # gives the same total power (and, at distance >> r, the same irradiance) as a point light of
-        # intensity I. A point light inside an opaque marker would be fully occluded.
-        "light": {"type": "sphere", "radius": float(marker_radius), "center": [float(x) for x in light_pos],
-                  "emitter": {"type": "area", "radiance": {"type": "rgb", "value": [marker_radiance(intensity, marker_radius)] * 3}}},
+        "light": {"type": "point", "position": [float(x) for x in light_pos],
+                  "intensity": {"type": "rgb", "value": [intensity] * 3}},
     }
 
 

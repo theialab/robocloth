@@ -73,6 +73,8 @@ def main():
     ap.add_argument("--frame-indices", default=None, help="comma list; renders a subset of the 81-pose schedule")
     ap.add_argument("--render-seed", type=int, default=20260922)
     ap.add_argument("--intensity", type=float, default=20.0)
+    ap.add_argument("--ball-roughness", type=float, default=0.3, help="ball mode only")
+    ap.add_argument("--ground-roughness", type=float, default=0.15, help="ball mode only: roughness of the glossy sample patch")
     ap.add_argument("--variant", default="cuda_ad_rgb")
     ap.add_argument("--profile", default=None, choices=[None, *T.SPEED_PROFILES])
     ap.add_argument("--split", default="visualization")
@@ -110,10 +112,11 @@ def main():
             material_meta = {"kind": "robocloth_neural", "id": 314, "checkpoint": {"path": str(ckpt), "sha256": sha256(ckpt) if ckpt.exists() else None},
                              "materials_json": spec_json, "bsdf_params": None}
         elif args.mode == "ball":
-            scene = mi.load_dict(S.ball_scene_dict(cam_pos[0], light_pos[0], args.fov, args.width, args.height, args.intensity, max_depth=args.max_depth))
+            scene = mi.load_dict(S.ball_scene_dict(cam_pos[0], light_pos[0], args.fov, args.width, args.height, args.intensity, ball_roughness=args.ball_roughness, ground_roughness=args.ground_roughness, max_depth=args.max_depth))
             material_meta = {"kind": "mitsuba_principled", "id": None, "checkpoint": None,
-                             "bsdf_params": {"ball": {"base_color": [0.6, 0.6, 0.6], "roughness": 0.3, "specular": 0.5, "radius": 0.5, "center": [0, 0, 0]},
-                                             "ground": {"diffuse_reflectance": [0.4, 0.4, 0.4], "y": -0.5}, "light_marker": {"radius": 0.04, "radiance": [S.marker_radiance(args.intensity, 0.04)] * 3}}}
+                             "bsdf_params": {"ball": {"base_color": [0.6, 0.6, 0.6], "roughness": args.ball_roughness, "specular": 0.5, "radius": S.BALL_RADIUS, "center": S.BALL_CENTER},
+                                             "sample_patch": {"base_color": [0.5, 0.5, 0.5], "roughness": args.ground_roughness, "specular": 0.6, "half_extent": S.SAMPLE_HALF_EXTENT, "y": 0.002},
+                                             "ground": {"diffuse_reflectance": [0.28, 0.28, 0.28], "y": 0.0}}}
         else:
             scene = mi.load_dict(S.white_lambert_scene_dict(cam_pos[0], light_pos[0], args.fov, args.width, args.height, args.intensity, max_depth=args.max_depth))
             material_meta = {"kind": "mitsuba_diffuse_white", "id": None, "checkpoint": None, "bsdf_params": {"cloth": {"reflectance": [1.0, 1.0, 1.0]}}}
@@ -122,9 +125,9 @@ def main():
     # the sensor is whichever object also exposes x_fov (scene.xml sensors have no id -> "object_<n>.to_world")
     sensor_prefixes = {k[: -len(".x_fov")] for k in keys if k.endswith(".x_fov")}
     cam_key = next((f"{p}.to_world" for p in sensor_prefixes if f"{p}.to_world" in keys), None)
-    light_key = "light.position" if "light.position" in keys else None          # point light (material / white_lambert)
-    marker_key = next((k for k in keys if k.startswith("light.") and k.endswith("to_world")), None)  # emissive sphere (ball)
-    if cam_key is None or (light_key is None and marker_key is None):
+    light_key = "light.position" if "light.position" in keys else None
+    marker_key = None
+    if cam_key is None or light_key is None:
         raise KeyError(f"need sensor to_world and light.position in traverse keys; got {keys[:40]}")
     print(f"traverse keys: camera={cam_key} light={light_key} marker={marker_key}", file=log)
 
@@ -151,11 +154,11 @@ def main():
                    "fov_deg": args.fov, "fov_axis": "y", "resolution": [args.width, args.height], "look_at": [0.0, 0.0, 0.0],
                    "up_hint": [0.0, 1.0, 0.0], "radius": spec.radius, "intrinsics_K": K,
                    "fixed_direction_deg": None if spec.moving_element == "camera" else {"theta": spec.fixed_theta_deg, "phi": spec.fixed_phi_deg}},
-        "light": {"type": "sphere_area" if args.mode == "ball" else "point", "mode": "trajectory" if spec.moving_element == "light" else "fixed", "radius_from_origin": spec.radius,
-                  "intensity_rgb": [args.intensity] * 3, "source_radius": 0.04 if args.mode == "ball" else 0.0,
-                  "units": "point-light intensity I (W/sr); ball mode uses an emissive sphere with radiance I/(pi r^2), same total power",
+        "light": {"type": "point", "mode": "trajectory" if spec.moving_element == "light" else "fixed", "radius_from_origin": spec.radius,
+                  "intensity_rgb": [args.intensity] * 3, "source_radius": 0.0,
+                  "units": "Mitsuba point-light intensity I (W/sr); irradiance at distance r = I cos(theta) / r^2",
                   "fixed_direction_deg": None if spec.moving_element == "light" else {"theta": spec.fixed_theta_deg, "phi": spec.fixed_phi_deg},
-                  "visual_marker": {"present": args.mode == "ball", "radius": 0.04, "note": "in ball mode the marker is the emitter"}},
+                  "visual_marker": {"present": False, "note": "light position is drawn as an overlay by make_visualization.py"}},
         "trajectory": {"split": args.split, **traj.to_metadata()},
         "render": {"spp": args.spp, "batch_spp": args.batch_spp, "max_depth": args.max_depth, "integrator": "path", "sampler": "independent",
                    "denoiser": None, "exposure": 1.0, "tonemap": "global Reinhard x/(1+x) then sRGB (mi.util.write_bitmap), 8-bit PNG",
@@ -176,7 +179,7 @@ def main():
             if light_key is not None:
                 params[light_key] = mi.Point3f([float(x) for x in lp])
             if marker_key is not None:
-                params[marker_key] = mi.Transform4f(mi.ScalarTransform4f().translate([float(x) for x in lp]).scale(0.04))
+                params[marker_key] = mi.Transform4f(mi.ScalarTransform4f().translate([float(x) for x in lp]).scale(args.light_radius))
             params.update()
             seed = args.render_seed + idx
             random.seed(seed)
