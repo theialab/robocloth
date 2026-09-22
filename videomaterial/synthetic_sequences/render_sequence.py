@@ -119,7 +119,9 @@ def main():
             material_meta = {"kind": "mitsuba_diffuse_white", "id": None, "checkpoint": None, "bsdf_params": {"cloth": {"reflectance": [1.0, 1.0, 1.0]}}}
     params = mi.traverse(scene)
     keys = list(params.keys())
-    cam_key = next((k for k in keys if k.endswith("to_world") and k.split(".")[0] in ("sensor", "PerspectiveCamera")), None)
+    # the sensor is whichever object also exposes x_fov (scene.xml sensors have no id -> "object_<n>.to_world")
+    sensor_prefixes = {k[: -len(".x_fov")] for k in keys if k.endswith(".x_fov")}
+    cam_key = next((f"{p}.to_world" for p in sensor_prefixes if f"{p}.to_world" in keys), None)
     light_key = "light.position" if "light.position" in keys else None          # point light (material / white_lambert)
     marker_key = next((k for k in keys if k.startswith("light.") and k.endswith("to_world")), None)  # emissive sphere (ball)
     if cam_key is None or (light_key is None and marker_key is None):
