@@ -26,6 +26,7 @@ source "$REPO/videomaterial/leonardo/config/paths.sh"
 
 RUN_NAME="${VM_RUN_NAME:?VM_RUN_NAME must be set}"
 SPP="${VM_SPP:-64}"
+BATCH="${VM_BATCH_SPP:-4}"
 VARIANT="${VM_VARIANT:-cuda_ad_rgb}"
 OUT="$VM_OUT_ROOT/runs/$RUN_NAME"
 
@@ -49,7 +50,7 @@ python "$REPO/videomaterial/leonardo/bench/run_benchmark.py" \
     --output "$OUT" \
     --frames 81 \
     --spp "$SPP" \
-    --batch-spp 4 \
+    --batch-spp "$BATCH" \
     --seed 20260821 \
     --variant "$VARIANT" \
     --tag "$RUN_NAME" \
