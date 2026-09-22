@@ -1,0 +1,36 @@
+# exp-015 Mitsuba GPU render environment for Leonardo.
+# Mirrors the workstation env `fipt-mitsuba` that produced exp-004 / exp-005
+# (Mitsuba 3.8.0, Dr.Jit 1.3.1, PyTorch 2.4.1+cu124, numpy 1.26.4) so the
+# A100 numbers are comparable with the RTX 6000 Ada anchor.
+#
+# torch/torchvision are installed separately from the PyTorch cu124 index
+# (see build_env.sh) because they are not on PyPI with the +cu124 local version.
+
+mitsuba==3.8.0
+drjit==1.3.1
+
+numpy==1.26.4
+scipy==1.17.1
+
+# Imported by rendering/render.py at module level.
+hydra-core==1.3.2
+omegaconf==2.3.0
+
+# brdf_plugin.material.* import chain.
+pytorch-lightning==2.6.1
+torchmetrics==1.9.0
+PyYAML==6.0.3
+tqdm==4.67.3
+
+# Image / video I/O used by the drivers and the report.
+imageio==2.37.3
+imageio-ffmpeg==0.6.0
+OpenEXR==3.4.12
+pillow==12.2.0
+opencv-python==4.10.0.84
+
+# Lazily imported by brdf_plugin.material.* helpers we do not exercise here,
+# but installed so an import-time regression fails at build time, not in a job.
+pandas
+matplotlib
+trimesh
