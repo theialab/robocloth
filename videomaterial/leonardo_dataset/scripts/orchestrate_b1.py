@@ -71,26 +71,34 @@ def submit(repo_root, run_root, array):
     return jid
 
 
-def task_states(job_id):
-    out = ssh(f"sacct -j {job_id} -X -n -P -o JobID,State,Elapsed", check=False)
+def parse_sacct(out: str) -> dict:
+    """{array task id -> state} from ``sacct -X -n -P -o JobID,State,Elapsed``.
+
+    Pending array tasks arrive collapsed as ``12345_[4-15]`` (and may carry a ``%throttle``
+    suffix), so the ranges are expanded here; a job with no ``_`` is not an array task and is
+    ignored. Kept free of I/O so it can be tested without a live job."""
     st = {}
     for line in out.splitlines():
         parts = line.split("|")
         if len(parts) < 2 or "_" not in parts[0]:
             continue
-        tid = parts[0].split("_", 1)[1]
-        if tid.startswith("["):          # a pending array range, e.g. 12345_[4-15]
-            body = tid.strip("[]").split("%")[0]
-            for chunk in body.split(","):
+        tid, state = parts[0].split("_", 1), parts[1].split()[0]
+        tid = tid[1]
+        if tid.startswith("["):
+            for chunk in tid.split("%")[0].strip("[]").split(","):
                 if "-" in chunk:
-                    a, b = chunk.split("-")
+                    a, b = chunk.split("-")[:2]
                     for i in range(int(a), int(b) + 1):
-                        st[str(i)] = parts[1].split()[0]
+                        st[str(i)] = state
                 elif chunk.isdigit():
-                    st[chunk] = parts[1].split()[0]
+                    st[chunk] = state
         else:
-            st[tid] = parts[1].split()[0]
+            st[tid] = state
     return st
+
+
+def task_states(job_id):
+    return parse_sacct(ssh(f"sacct -j {job_id} -X -n -P -o JobID,State,Elapsed", check=False))
 
 
 def complete_dirs(b1_root):
