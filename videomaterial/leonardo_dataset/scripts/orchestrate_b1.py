@@ -122,8 +122,11 @@ def main():
     args.state_dir.mkdir(parents=True, exist_ok=True)
     man = json.loads(args.manifest.read_text())
     seqs = man["sequences"]
+    prev = {}
+    if args.no_submit and (args.state_dir / "status.json").exists():
+        prev = {"job_ids": json.loads((args.state_dir / "status.json").read_text()).get("job_ids", [])}
     status = Status(args.state_dir / "status.json", sequences_total=len(seqs), nshards=args.nshards,
-                    manifest=str(args.manifest), local_root=str(args.local_root))
+                    manifest=str(args.manifest), local_root=str(args.local_root), **prev)
     for flag in ("DONE", "FAILED"):
         (args.state_dir / flag).unlink(missing_ok=True)
 
