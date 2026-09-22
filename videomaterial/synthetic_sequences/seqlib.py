@@ -26,7 +26,7 @@ from synthetic_sequences import scene as S  # noqa: E402
 
 SETUPS = {"B1": ("B1_Fixed_camera", T.TrajectorySpec.b1_light),
           "B2": ("B2_Fixed_light", T.TrajectorySpec.b2_camera)}
-MODES = ("material", "ball", "white_lambert")
+MODES = ("material", "ball", "white_lambert", "pbr_patch")
 
 
 # ------------------------------------------------------------------------------------- utilities
@@ -47,8 +47,17 @@ def git_info(repo):
             return subprocess.run(["git", "-C", str(repo), *a], capture_output=True, text=True, timeout=20).stdout.strip()
         except Exception:
             return ""
-    return {"repo": str(repo), "branch": run("rev-parse", "--abbrev-ref", "HEAD"),
+    info = {"repo": str(repo), "branch": run("rev-parse", "--abbrev-ref", "HEAD"),
             "commit": run("rev-parse", "HEAD"), "dirty": bool(run("status", "--porcelain"))}
+    if not info["commit"]:   # rsynced copies carry no .git: read the stamp written at sync time
+        stamp = Path(repo) / "CODE_VERSION"
+        if stamp.exists():
+            for line in stamp.read_text().splitlines():
+                k, _, v = line.partition("=")
+                if k.strip() in ("branch", "commit", "dirty"):
+                    info[k.strip()] = (v.strip() == "true") if k.strip() == "dirty" else v.strip()
+            info["source"] = "CODE_VERSION stamp"
+    return info
 
 
 @dataclass
@@ -161,6 +170,12 @@ def load_scene(mi, mode: str, cam_pos0, light_pos0, cfg: RenderConfig, log=None)
                                     "sample_patch": {"base_color": [0.5, 0.5, 0.5], "roughness": cfg.ground_roughness,
                                                      "specular": 0.6, "half_extent": S.SAMPLE_HALF_EXTENT, "y": 0.002},
                                     "ground": {"diffuse_reflectance": [0.28, 0.28, 0.28], "y": 0.0}}}
+            return SceneHandle(mi, scene, mode, meta)
+        if mode == "pbr_patch":
+            scene = mi.load_dict(S.pbr_patch_scene_dict(cam_pos0, light_pos0, cfg.fov, cfg.width, cfg.height,
+                                                        cfg.intensity, max_depth=cfg.max_depth))
+            meta = {"kind": "mitsuba_principled_homogeneous", "id": None, "checkpoint": None,
+                    "bsdf_params": {"cloth": dict(S.PBR_PATCH_BSDF), "source": "exp-014 pbr_grey scene.xml"}}
             return SceneHandle(mi, scene, mode, meta)
         if mode == "white_lambert":
             scene = mi.load_dict(S.white_lambert_scene_dict(cam_pos0, light_pos0, cfg.fov, cfg.width,

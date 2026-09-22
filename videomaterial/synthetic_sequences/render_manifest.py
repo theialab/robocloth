@@ -86,6 +86,40 @@ def render_one(mi, dr, torch, seq, handles, cfgs, render_fn, root: Path, log, do
             "s_per_frame": float(np.mean(secs))}
 
 
+def render_twin_only(mi, dr, torch, seq, handle, cfg, render_fn, root: Path, log, twin: str):
+    """Add a `<twin>_png/` render (same poses) to an already-complete material sequence.
+    Resumable via the `<TWIN>_COMPLETE` marker; PNG only; metadata gets a `<twin>_render` block."""
+    out = root / seq["dir"]
+    marker = out / f"{twin.upper()}_COMPLETE"
+    if marker.exists():
+        return None
+    if not (out / "RENDER_COMPLETE").exists():
+        raise RuntimeError(f"{seq['dir']}: material render not complete; twin-only pass refuses to run")
+    started = time.time()
+    poses = L.build_poses("B1", seq["class"], seq["seed"], cfg.frames)
+    indices = list(range(cfg.frames))
+    recs = L.render_poses(mi, handle, indices, poses.cam_pos, poses.light_pos, cfg, render_fn,
+                          png_dir=out / f"{twin}_png", exr_dir=None, log=log)
+    with (out / f"{twin}_frames.jsonl").open("w") as fj:
+        for r in recs:
+            fj.write(json.dumps({"index": r["index"], "seed": r["seed"], "seconds": r["seconds"],
+                                 "png": str(r["png"].relative_to(out)), "stats": r["stats"]}, sort_keys=True) + "\n")
+    meta = json.loads((out / "metadata.json").read_text())
+    meta[f"{twin}_render"] = {
+        "rendered": True, "mode": twin, "spp": cfg.spp, "batch_spp": cfg.batch_spp, "max_depth": cfg.max_depth,
+        "png_dir": f"{twin}_png", "exr_dir": None, "frames_jsonl": f"{twin}_frames.jsonl",
+        "material": handle.material_meta, "poses": "identical to the material sequence (same class/seed)",
+        "generator": {**L.git_info(L.HERE.parents[1]), "script": str(Path(__file__).resolve()), "variant": cfg.variant},
+        "render_seed_base": cfg.render_seed, "rendered_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "seconds": time.time() - started,
+        "seconds_per_frame_mean": float(np.mean([r["seconds"] for r in recs])),
+    }
+    (out / "metadata.json").write_text(json.dumps(meta, indent=2) + "\n")
+    L.finalize(out)                     # refresh MANIFEST.sha256 (RENDER_COMPLETE keeps its meaning)
+    marker.write_text(time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()) + "\n")
+    return {"wall": time.time() - started, "s_per_frame": meta[f"{twin}_render"]["seconds_per_frame_mean"]}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--manifest", type=Path, required=True)
@@ -93,6 +127,10 @@ def main():
     ap.add_argument("--nshards", type=int, default=1)
     ap.add_argument("--root", type=Path, required=True, help="the B1_Fixed_camera directory")
     ap.add_argument("--no-ball", action="store_true")
+    ap.add_argument("--twin-only", default=None, choices=["pbr_patch", "ball", "white_lambert"],
+                    help="skip the material; only add <MODE>_png/ to sequences that already have RENDER_COMPLETE")
+    ap.add_argument("--twin-spp", type=int, default=32)
+    ap.add_argument("--twin-batch-spp", type=int, default=16)
     ap.add_argument("--limit", type=int, default=None, help="render at most this many sequences (debug runs)")
     ap.add_argument("--variant", default="cuda_ad_rgb")
     ap.add_argument("--render-seed", type=int, default=20260922)
@@ -131,6 +169,31 @@ def main():
 
     t0 = time.time()
     poses0 = L.build_poses("B1", todo[0]["class"], todo[0]["seed"], man["frames"])
+    if args.twin_only:
+        twin = args.twin_only
+        tcfg = L.RenderConfig(spp=args.twin_spp, batch_spp=args.twin_batch_spp, **common)
+        handle = L.load_scene(mi, twin, poses0.cam_pos[0], poses0.light_pos[0], tcfg, log=log)
+        say(f"twin-only pass: {twin} spp={tcfg.spp} batch={tcfg.batch_spp}; scene loaded in {time.time()-t0:.1f}s")
+        done = failed = skipped = 0
+        prev_end = None
+        for k, seq in enumerate(todo):
+            gap = None if prev_end is None else time.time() - prev_end
+            try:
+                r = render_twin_only(mi, dr, torch, seq, handle, tcfg, render_fn, args.root, log, twin)
+                if r is None:
+                    skipped += 1; say(f"[{k+1}/{len(todo)}] skip {seq['dir']} ({twin.upper()}_COMPLETE present)")
+                else:
+                    done += 1
+                    say(f"[{k+1}/{len(todo)}] {seq['dir']} {twin} wall={r['wall']:.1f}s ({r['s_per_frame']:.2f} s/frame) "
+                        f"gap_before={'n/a' if gap is None else f'{gap:.2f}s'}")
+            except Exception as e:
+                failed += 1
+                import traceback
+                say(f"[{k+1}/{len(todo)}] FAILED {seq['dir']}: {e!r}\n{traceback.format_exc()}")
+            prev_end = time.time()
+        say(f"shard {args.shard} twin-only finished: {done} rendered, {skipped} skipped, {failed} failed, wall {time.time()-t0:.1f}s")
+        handle.close()
+        return 1 if failed else 0
     handles = {"material": L.load_scene(mi, "material", poses0.cam_pos[0], poses0.light_pos[0], cfgs["material"], log=log)}
     say(f"material scene loaded in {time.time()-t0:.1f}s (checkpoint stays resident for the whole shard)")
     if not args.no_ball:

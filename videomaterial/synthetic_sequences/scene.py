@@ -97,6 +97,28 @@ def white_lambert_scene_dict(camera_pos, light_pos, fov_deg, width, height, inte
     }
 
 
+PBR_PATCH_BSDF = {"base_color": [0.55, 0.55, 0.55], "roughness": 0.35, "specular": 0.5, "metallic": 0.0}
+
+
+def pbr_patch_scene_dict(camera_pos, light_pos, fov_deg, width, height, intensity=20.0, max_depth=4):
+    """Trivial case (Zhen, 2026-09-22): the exp-005 rectangle with a HOMOGENEOUS Mitsuba `principled`
+    material — exactly the exp-014 "pbr_grey" BSDF (base 0.55, roughness 0.35, specular 0.5, metallic 0) —
+    the exp-005 point light, no ball, no ground. Same camera/light poses as the material sequence."""
+    import mitsuba as mi
+    T = mi.ScalarTransform4f
+    return {
+        "type": "scene",
+        "integrator": {"type": "path", "max_depth": int(max_depth)},
+        "sensor": sensor_dict(camera_pos, fov_deg, width, height),
+        "cloth": {"type": "rectangle", "to_world": T().rotate([1, 0, 0], -90).scale(SAMPLE_HALF_EXTENT),
+                  "bsdf": {"type": "principled", "base_color": {"type": "rgb", "value": PBR_PATCH_BSDF["base_color"]},
+                           "roughness": PBR_PATCH_BSDF["roughness"], "specular": PBR_PATCH_BSDF["specular"],
+                           "metallic": PBR_PATCH_BSDF["metallic"]}},
+        "light": {"type": "point", "position": [float(x) for x in light_pos],
+                  "intensity": {"type": "rgb", "value": [intensity] * 3}},
+    }
+
+
 def load_material_scene(scene_src, checkpoint_root, rendering_root):
     """exp-005 neural-material scene via RoboCloth's loader (registers the BSDF plugins)."""
     import json, sys, tempfile, shutil
