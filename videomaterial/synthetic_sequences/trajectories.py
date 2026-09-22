@@ -294,9 +294,8 @@ def coverage_stats(list_of_directions, spec, n_rings=8, n_sectors=24):
             "median": float(np.median(cnt)), "max": int(cnt.max()), "cv": float(cnt.std() / max(cnt.mean(), 1e-9))}
 
 
-def greedy_select(pool, spec, n, quotas=None, n_rings=8, n_sectors=24):
-    """pool: list of (cls, directions). Greedily maximise Σ log(1+count) over equal-area cells,
-    under optional per-class quotas {cls: count}. Returns the selected indices."""
+def _greedy_select_reference(pool, spec, n, quotas=None, n_rings=8, n_sectors=24):
+    """Readable O(n * |pool|) reference; ``greedy_select`` must match it exactly (see tests)."""
     C = [np.bincount(cell_ids(v, spec, n_rings, n_sectors), minlength=n_rings * n_sectors) for _, v in pool]
     cnt = np.zeros(n_rings * n_sectors)
     left = dict(quotas) if quotas else None
@@ -312,6 +311,42 @@ def greedy_select(pool, spec, n, quotas=None, n_rings=8, n_sectors=24):
         if best is None:
             break
         used.add(best); sel.append(best); cnt += C[best]
+        if left is not None:
+            left[pool[best][0]] -= 1
+    return sel
+
+
+def greedy_select(pool, spec, n, quotas=None, n_rings=8, n_sectors=24):
+    """pool: list of (cls, directions). Greedily maximise Sum log(1+count) over equal-area cells,
+    under optional per-class quotas {cls: count}. Returns the selected indices.
+
+    Vectorised over the pool (the B1 train selection is 900 picks out of ~3,500 candidates, which
+    the per-candidate Python loop would walk 3.15 M times). Bit-identical to
+    ``_greedy_select_reference``: the same per-candidate expression, and ``argmax`` resolves ties
+    to the lowest index exactly as ``g > bg`` does."""
+    ncell = n_rings * n_sectors
+    if not pool:
+        return []
+    C = np.stack([np.bincount(cell_ids(v, spec, n_rings, n_sectors), minlength=ncell)
+                  for _, v in pool]).astype(np.float64)
+    classes = np.array([c for c, _ in pool])
+    cnt = np.zeros(ncell)
+    left = dict(quotas) if quotas else None
+    alive = np.ones(len(pool), dtype=bool)
+    sel = []
+    for _ in range(n):
+        mask = alive.copy()
+        if left is not None:
+            allowed = {c for c, k in left.items() if k > 0}
+            mask &= np.isin(classes, list(allowed)) if allowed else np.zeros_like(mask)
+        if not mask.any():
+            break
+        gain = (np.log1p(cnt[None, :] + C) - np.log1p(cnt)[None, :]).sum(axis=1)
+        gain[~mask] = -np.inf
+        best = int(np.argmax(gain))
+        alive[best] = False
+        sel.append(best)
+        cnt += C[best]
         if left is not None:
             left[pool[best][0]] -= 1
     return sel

@@ -99,3 +99,27 @@ def test_metadata_is_json_serialisable():
     import json
     tr = T.sample_trajectory("spline", 7, SPECS["B2"])
     s = json.dumps(tr.to_metadata()); assert "control_points_disk" in s and "centripetal" in s
+
+
+def test_greedy_select_matches_reference():
+    """The vectorised selector must be bit-identical to the readable loop version."""
+    spec = SPECS["B1"]
+    pool = [(cls, T.sample_trajectory(cls, 500 + i, spec).directions)
+            for i, cls in enumerate(["spline"] * 12 + ["highlight_sweep"] * 6 + ["ring"] * 4)]
+    assert T.greedy_select(pool, spec, 8) == T._greedy_select_reference(pool, spec, 8)
+    q = {"spline": 5, "highlight_sweep": 2}
+    a, b = T.greedy_select(pool, spec, 7, quotas=q), T._greedy_select_reference(pool, spec, 7, quotas=q)
+    assert a == b and len(a) == 7
+    assert sum(pool[i][0] == "spline" for i in a) == 5
+    # quota exhaustion stops the selection rather than spilling into other classes
+    assert len(T.greedy_select(pool, spec, 20, quotas={"ring": 4})) == 4
+
+
+def test_greedy_select_beats_random_coverage():
+    spec = SPECS["B1"]
+    pool = [("spline", T.sample_trajectory("spline", 9000 + i, spec).directions) for i in range(60)]
+    sel = T.greedy_select(pool, spec, 12)
+    rng = np.random.default_rng(0)
+    g = T.coverage_stats([pool[i][1] for i in sel], spec)
+    r = T.coverage_stats([pool[i][1] for i in rng.choice(len(pool), 12, replace=False)], spec)
+    assert g["empty"] <= r["empty"] and g["cv"] <= r["cv"]
