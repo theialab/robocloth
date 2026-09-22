@@ -40,6 +40,21 @@ video,img{{max-width:100%;display:block}} section{{margin:2rem 0;border-top:1px 
 <p><a href="all_classes_contact_sheet.png">all_classes_contact_sheet.png</a></p>
 {''.join(rows)}"""
     (root / "index.html").write_text(html)
+    # Markdown twin for VS Code's built-in preview (renders images and <video> tags with relative paths;
+    # no HTTP server needed on the fileserver)
+    md = [f"# {setup} — {SETUP_DIR[setup]} — trajectory visualisations", "",
+          "Grey PBR ball (r 0.5) on a grey ground; the bright dot is the light. Right panel: equal-area disk of the moving element's hemisphere — path (colour = time), ● current pose, ★ mirror direction, ◎ fixed element. Fixed element θ 45° φ 90° r 3; camera fov_y 35°, 832×480, 81 frames at 15 fps. Seeds and parameters: each clip's `metadata.json`.", "",
+          "![all classes](all_classes_contact_sheet.png)", ""]
+    for c in clips:
+        m = json.loads((c / "metadata.json").read_text()); tr = m["trajectory"]
+        mp4 = next(c.glob("*.mp4"), None)
+        md += [f"## {c.name}", "",
+               f"class {tr['class']} · seed {m['seeds']['trajectory']} · mode {m['mode']} · spp {m['render']['spp']} · arc {tr.get('arc_length_deg',0):.0f}° · max step {tr.get('max_step_deg',0):.2f}° · θ {tr['theta_deg_range_actual'][0]:.1f}–{tr['theta_deg_range_actual'][1]:.1f}° · φ coverage {tr['phi_coverage_deg']:.0f}°", ""]
+        if mp4:
+            md += [f'<video controls loop muted width="900" src="{c.name}/{mp4.name}"></video>', ""]
+        if (c / "contact_sheet.png").exists():
+            md += [f"![{c.name} contact sheet]({c.name}/contact_sheet.png)", ""]
+    (root / "README.md").write_text("\n".join(md))
     # combined sheet: middle frame of each clip
     tiles = []
     for c in clips:
