@@ -102,8 +102,9 @@ class TrajectorySpec:
 
     @staticmethod
     def b2_camera(**kw):
-        """B2: fixed light at θ 45° φ 90°, moving camera, polar 0.5–60°, cap 3°/frame."""
-        return TrajectorySpec("camera", 0.5, 60.0, 3.0, **kw)
+        """B2: fixed light at θ 45° φ 90°, moving camera, polar 0.5–80° (Zhen, 2026-09-23: the earlier 60° cap
+        came from the abandoned overfill framing; 80° matches the B1 light and covers grazing views), cap 3°/frame."""
+        return TrajectorySpec("camera", 0.5, 80.0, 3.0, **kw)
 
 
 @dataclass
