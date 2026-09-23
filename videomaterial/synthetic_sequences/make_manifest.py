@@ -21,7 +21,8 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
-from synthetic_sequences import trajectories as T  # noqa: E402
+from synthetic_sequences import trajectories as T
+from synthetic_sequences import seqlib as L  # noqa: E402
 
 # Disjoint seed blocks. A block base is 1e8 apart so adding the master seed can never make two
 # blocks overlap; test spline/highlight seeds therefore never coincide with a training seed.
@@ -47,8 +48,9 @@ def git_info(repo):
             "commit": run("rev-parse", "HEAD"), "dirty": bool(run("status", "--porcelain"))}
 
 
-def build(master_seed=20260922, frames=81, verbose=True):
-    spec = T.TrajectorySpec.b1_light(frames=frames)
+def build(master_seed=20260922, frames=81, verbose=True, setup="B1"):
+    setup_dir, spec_fn = L.SETUPS[setup]
+    spec = spec_fn(frames=frames)
     t0 = time.time()
 
     # ---- train: sample the candidate pool, then pick 900 by greedy coverage
@@ -100,10 +102,12 @@ def build(master_seed=20260922, frames=81, verbose=True):
 
     manifest = {
         "schema_version": 1,
-        "setup": "B1", "setup_dir": "B1_Fixed_camera",
-        "description": "exp-015 B1 dataset: fixed camera (theta 45 deg, phi 90 deg, r 3.0, fov_y 35 deg), "
-                       "moving point light, 832x480, 81 frames at 15 fps. Every sequence is rendered twice: "
-                       "material 314 (frames_png, frames_exr when keep_exr) and the PBR ball twin (ball_png).",
+        "setup": setup, "setup_dir": setup_dir,
+        "description": (f"exp-015 {setup} dataset: " +
+                        ("fixed camera (theta 45 deg, phi 90 deg, r 3.0, fov_y 35 deg), moving point light" if setup == "B1"
+                         else "fixed point light (theta 45 deg, phi 90 deg, r 3.0), moving camera (fov_y 35 deg)") +
+                        ", 832x480, 81 frames at 15 fps. Every sequence is rendered twice: material 314 "
+                        "(frames_png, frames_exr when keep_exr) and the homogeneous PBR-patch twin (pbr_patch_png)."),
         "created_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "generator": {**git_info(HERE.parents[1]), "script": str(Path(__file__).resolve()),
                       "python": platform.python_version(), "numpy": np.__version__},
@@ -117,9 +121,10 @@ def build(master_seed=20260922, frames=81, verbose=True):
                       "seed_blocks": {k: v + master_seed for k, v in BLOCK.items()},
                       "coverage_stats": cov},
         "storage": {"material_png": "always", "material_exr": f"every {EXR_EVERY_N_TRAIN}th train sequence and all test sequences",
-                    "ball_png": "always", "ball_exr": "never"},
+                    "pbr_patch_png": "always", "pbr_patch_exr": "never"},
+        "twin": "pbr_patch",
         "render": {"material": {"mode": "material", "spp": 64, "batch_spp": 16, "png_dir": "frames_png", "exr_dir": "frames_exr"},
-                   "ball": {"mode": "ball", "spp": 32, "batch_spp": 8, "png_dir": "ball_png", "exr_dir": None},
+                   "pbr_patch": {"mode": "pbr_patch", "spp": 32, "batch_spp": 16, "png_dir": "pbr_patch_png", "exr_dir": None},
                    "max_depth": 4, "intensity": 20.0},
         "counts": {"total": len(sequences),
                    "train": sum(s["split"] == "train" for s in sequences),
@@ -139,9 +144,10 @@ def main():
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--master-seed", type=int, default=20260922)
     ap.add_argument("--frames", type=int, default=81)
+    ap.add_argument("--setup", choices=list(L.SETUPS), default="B1")
     args = ap.parse_args()
 
-    m = build(args.master_seed, args.frames)
+    m = build(args.master_seed, args.frames, setup=args.setup)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(m, indent=2) + "\n")
 
