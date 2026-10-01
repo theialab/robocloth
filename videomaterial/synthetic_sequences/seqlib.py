@@ -26,6 +26,9 @@ from synthetic_sequences import scene as S  # noqa: E402
 
 SETUPS = {"B1": ("B1_Fixed_camera", T.TrajectorySpec.b1_light),
           "B2": ("B2_Fixed_light", T.TrajectorySpec.b2_camera)}
+# Joint setups move camera AND light: frame k takes the light of frame k of a B1 sequence and the
+# camera of frame k of a B2 sequence (agreed with Zhen 2026-09-24; no speed decoupling).
+JOINT_SETUPS = {"B3": {"setup_dir": "B3_Joint", "light": "B1", "camera": "B2"}}
 MODES = ("material", "ball", "white_lambert", "pbr_patch")
 
 
@@ -92,6 +95,7 @@ class PoseSet:
     traj: "T.Trajectory"
     cam_pos: np.ndarray            # (F, 3)
     light_pos: np.ndarray          # (F, 3)
+    joint: Optional[dict] = None   # joint setups (B3) only: the two source PoseSets + manifest entries
 
 
 def build_poses(setup: str, cls: str, seed: int, frames: int = 81, profile=None) -> PoseSet:
@@ -106,6 +110,83 @@ def build_poses(setup: str, cls: str, seed: int, frames: int = 81, profile=None)
     else:
         cam_pos, light_pos = moving, np.repeat(fixed[None], frames, 0)
     return PoseSet(setup, setup_dir, cls, seed, spec, traj, cam_pos, light_pos)
+
+
+def build_joint_poses(seq: dict, frames: int = 81, setup: str = "B3", pairing_master_seed=None) -> PoseSet:
+    """Joint (B3) poses for one manifest entry: frame k = light of frame k of ``seq["light"]`` (a B1
+    sequence) and camera of frame k of ``seq["camera"]`` (a B2 sequence). Both source paths are
+    regenerated with the same deterministic sampler their own datasets were rendered from;
+    ``verify_joint_sources`` compares them with the sources' ``frames.jsonl`` exactly."""
+    js = JOINT_SETUPS[setup]
+    ls, cs = seq["light"], seq["camera"]
+    if ls["setup"] != js["light"] or cs["setup"] != js["camera"]:
+        raise ValueError(f"{setup} needs light from {js['light']} and camera from {js['camera']}; "
+                         f"got {ls['setup']} / {cs['setup']}")
+    lp = build_poses(ls["setup"], ls["class"], ls["seed"], frames)
+    cp = build_poses(cs["setup"], cs["class"], cs["seed"], frames)
+    if lp.spec.moving_element != "light" or cp.spec.moving_element != "camera":
+        raise ValueError("light source must move the light and camera source must move the camera")
+    return PoseSet(setup, js["setup_dir"], seq["class"], None, None, None,
+                   cam_pos=cp.cam_pos.copy(), light_pos=lp.light_pos.copy(),
+                   joint={"light": lp, "camera": cp, "light_src": dict(ls), "camera_src": dict(cs),
+                          "group": seq.get("group", seq["class"]), "pairing_master_seed": pairing_master_seed})
+
+
+def poses_for_sequence(seq: dict, setup: str, frames: int = 81, pairing_master_seed=None) -> PoseSet:
+    """Manifest entry -> PoseSet for every setup (B1/B2: class + seed; B3: the two source paths)."""
+    if setup in JOINT_SETUPS:
+        return build_joint_poses(seq, frames, setup, pairing_master_seed)
+    return build_poses(setup, seq["class"], seq["seed"], frames)
+
+
+def _read_frames_jsonl(path: Path):
+    recs = [json.loads(l) for l in Path(path).read_text().splitlines() if l.strip()]
+    recs.sort(key=lambda r: r["index"])
+    return recs
+
+
+def verify_joint_sources(poses: PoseSet, data_root, check_c2w: bool = True) -> dict:
+    """Compare a joint PoseSet with its two source sequences' ``frames.jsonl`` (under ``data_root``,
+    the ``Robocloth_synthetic_sequence`` directory), exactly: per frame the light position must equal
+    the B1 source's, and the camera position and camera-to-world (Mitsuba look-at, the transform the
+    renderer sets) the B2 source's. Also checks the angles stored in the sources. Raises
+    ``RuntimeError`` on any difference; returns a summary block for ``metadata.json``."""
+    j = poses.joint
+    data_root = Path(data_root)
+    ls, cs = j["light_src"], j["camera_src"]
+    lf = data_root / ls["setup_dir"] / ls["dir"] / "frames.jsonl"
+    cf = data_root / cs["setup_dir"] / cs["dir"] / "frames.jsonl"
+    lrec, crec = _read_frames_jsonl(lf), _read_frames_jsonl(cf)
+    F = len(poses.cam_pos)
+    for name, recs in (("light", lrec), ("camera", crec)):
+        if [r["index"] for r in recs] != list(range(F)):
+            raise RuntimeError(f"{name} source has frames {[r['index'] for r in recs][:5]}... not 0..{F-1}")
+    src_light = np.array([r["light"]["position"] for r in lrec], dtype=np.float64)
+    src_cam = np.array([r["camera"]["position"] for r in crec], dtype=np.float64)
+    src_c2w = np.array([r["camera"]["c2w"] for r in crec], dtype=np.float64)
+    # angles and distance exactly as frame_record writes them (one vector at a time)
+    lang = np.array([[float(a) for a in T.vec_to_ang(p / np.linalg.norm(p))] + [float(np.linalg.norm(p))]
+                     for p in poses.light_pos])
+    cang = np.array([[float(a) for a in T.vec_to_ang(p / np.linalg.norm(p))] for p in poses.cam_pos])
+    src_lang = np.array([[r["light"]["theta_deg"], r["light"]["phi_deg"], r["light"]["distance"]] for r in lrec])
+    src_cang = np.array([[r["camera"]["theta_deg"], r["camera"]["phi_deg"]] for r in crec])
+    diffs = {
+        "light_position_max_abs_diff": float(np.abs(src_light - poses.light_pos).max()),
+        "light_theta_phi_max_abs_diff_deg": float(np.abs(src_lang[:, :2] - lang[:, :2]).max()),
+        "light_distance_max_abs_diff": float(np.abs(src_lang[:, 2] - lang[:, 2]).max()),
+        "camera_position_max_abs_diff": float(np.abs(src_cam - poses.cam_pos).max()),
+        "camera_theta_phi_max_abs_diff_deg": float(np.abs(src_cang - cang).max()),
+    }
+    if check_c2w:
+        c2w = np.array([S.transform_to_list(S.look_at_matrix(p)) for p in poses.cam_pos], dtype=np.float64)
+        diffs["camera_c2w_max_abs_diff"] = float(np.abs(src_c2w - c2w).max())
+    exact = all(v == 0.0 for v in diffs.values())
+    out = {"light_frames_jsonl": f"{ls['setup_dir']}/{ls['dir']}/frames.jsonl",
+           "camera_frames_jsonl": f"{cs['setup_dir']}/{cs['dir']}/frames.jsonl",
+           "frames_compared": F, "c2w_compared": bool(check_c2w), **diffs, "exact": bool(exact)}
+    if not exact:
+        raise RuntimeError(f"joint poses differ from their sources: {out}")
+    return out
 
 
 # ---------------------------------------------------------------------------------------- scenes
@@ -240,6 +321,8 @@ def render_poses(mi, handle: SceneHandle, indices, cam_pos, light_pos, cfg: Rend
 def build_metadata(out: Path, poses: PoseSet, mode: str, cfg: RenderConfig, material_meta: dict,
                    mi, dr, torch, started: float, split: str, script: str) -> dict:
     """Schema-v2 metadata (SPEC section 3), sufficient to re-derive every condition signal."""
+    if poses.joint is not None:
+        return _build_joint_metadata(out, poses, mode, cfg, material_meta, mi, dr, torch, started, split, script)
     spec = poses.spec
     return {
         "schema_version": 2, "status": "rendering",
@@ -280,6 +363,42 @@ def build_metadata(out: Path, poses: PoseSet, mode: str, cfg: RenderConfig, mate
         "hardware": {"gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
                      "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"), "host": platform.node()},
     }
+
+
+def _build_joint_metadata(out, poses, mode, cfg, material_meta, mi, dr, torch, started, split, script):
+    """B3 metadata: the B1/B2 schema-v2 blocks (built from the light source, so every shared block is
+    the same code), with the setup-specific fields replaced: both camera and light are trajectories,
+    both seeds are recorded, and ``trajectory`` names the two source paths."""
+    j = poses.joint
+    ls, cs = j["light_src"], j["camera_src"]
+    lsp, csp = j["light"].spec, j["camera"].spec
+    meta = build_metadata(out, j["light"], mode, cfg, material_meta, mi, dr, torch, started, split, script)
+    meta["seeds"] = {"light_trajectory": ls["seed"], "camera_trajectory": cs["seed"],
+                     "pairing_master": j.get("pairing_master_seed"), "render_base": cfg.render_seed}
+    meta["setup"] = poses.setup
+    meta["camera"].update(mode="trajectory", radius=csp.radius, fixed_direction_deg=None)
+    meta["light"].update(mode="trajectory", radius_from_origin=lsp.radius, fixed_direction_deg=None)
+    src_note = ("sampler parameters of the source path as generated for its own dataset; fixed_element_deg / "
+                "mirror_direction_deg describe the SOURCE setup (they seed the sampler) - in B3 nothing is fixed")
+    meta["trajectory"] = {
+        "split": split, "group": j["group"], "class": j["group"], "moving_element": "camera+light",
+        "frames": len(poses.cam_pos), "radius": {"camera": csp.radius, "light": lsp.radius},
+        "light_path": f"{ls['setup_dir']}/{ls['dir']}", "camera_path": f"{cs['setup_dir']}/{cs['dir']}",
+        "light_class": ls["class"], "camera_class": cs["class"],
+        "light_source_split": ls["split"], "camera_source_split": cs["split"],
+        "pairing_rule": ("frame k: light position = frame k of light_path (B1), camera pose (c2w) = frame k of "
+                         "camera_path (B2); both at their native speed (no decoupling)"),
+        "polar_range_deg": {"light": [lsp.polar_min_deg, lsp.polar_max_deg],
+                            "camera": [csp.polar_min_deg, csp.polar_max_deg]},
+        "light": {"source_setup": ls["setup"], "source_path": f"{ls['setup_dir']}/{ls['dir']}",
+                  "source_manifest_index": ls.get("manifest_index"), "note": src_note,
+                  **j["light"].traj.to_metadata()},
+        "camera": {"source_setup": cs["setup"], "source_path": f"{cs['setup_dir']}/{cs['dir']}",
+                   "source_manifest_index": cs.get("manifest_index"), "note": src_note,
+                   **j["camera"].traj.to_metadata()},
+        "source_check": None,
+    }
+    return meta
 
 
 def frame_record(rec, poses: PoseSet, cfg: RenderConfig, out: Path, extra_files=None):
