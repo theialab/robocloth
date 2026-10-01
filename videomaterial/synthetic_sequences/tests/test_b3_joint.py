@@ -333,7 +333,19 @@ def test_outline_distance_is_distance_to_projected_quad():
         assert CM.outline_distance_px(meta, rec, [mid[1]], [mid[0]])[0] < 1e-6
         out_pt = a + 3.0 * (a - (np.array(cs[2]) + a) / 2) / np.linalg.norm(a - (np.array(cs[2]) + a) / 2)
         d = CM.outline_distance_px(meta, rec, [out_pt[1] - 0.5], [out_pt[0] - 0.5])[0]
+        d = CM.outline_distance_px(meta, rec, [out_pt[1] - 0.5], [out_pt[0] - 0.5], "l2")[0]
         assert abs(d - 3.0) < 1e-6, d                   # beyond corner a along the diagonal
+        # L-inf: analytic minimum == brute force over a dense sampling of the outline, and the norm
+        # inequalities linf <= l2 <= sqrt(2) linf hold
+        rng = np.random.default_rng(idx)
+        pts = rng.uniform([-50, -50], [880, 530], (200, 2))
+        dl = CM.outline_distance_px(meta, rec, pts[:, 1], pts[:, 0])
+        d2 = CM.outline_distance_px(meta, rec, pts[:, 1], pts[:, 0], "l2")
+        assert np.all(dl <= d2 + 1e-9) and np.all(d2 <= np.sqrt(2) * dl + 1e-9)
+        t = np.linspace(0, 1, 20001)[:, None]
+        poly = np.vstack([np.array(cs[k]) + t * (np.array(cs[(k + 1) % 4]) - np.array(cs[k])) for k in range(4)])
+        brute = np.abs((pts + 0.5)[:, None, :] - poly[None]).max(-1).min(1)
+        assert np.abs(brute - dl).max() < 0.05
         dv = CM.derive(meta, rec)
         ys, xs = np.nonzero(dv["inside"])
         far_inside = CM.outline_distance_px(meta, rec, ys, xs) > 0.01

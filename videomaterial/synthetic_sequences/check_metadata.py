@@ -5,9 +5,10 @@
   1. derivability: per-pixel camera rays (o ⊕ d) in the sample frame, hit points on y = 0, incident
      direction ω_i, cos θ_i / r², analytic Lambertian irradiance E = I cos θ_i / r²;
   2. silhouette: analytic inside-sample mask vs rendered mask (EXR > 0). Gate (``outline_max_px``):
-     the centre of every mismatched pixel lies within the box filter's half-footprint (sqrt(2)/2 px,
-     --outline-px default 0.75) of the projected sample outline (the quadrilateral through the four
-     projected corners) - a pixel is lit iff its square touches the sample. Also reported, not
+     the centre of every mismatched pixel lies within the box filter's support (0.5 px per axis, i.e.
+     L-inf distance; --outline-px default 0.52) of the projected sample outline (the quadrilateral
+     through the four projected corners) - a pixel is lit iff its square touches the sample. The
+     Euclidean value is reported as ``outline_max_px_l2`` (bound sqrt(2)/2). Also reported, not
      gated: ``silhouette_max_px``, the distance to the boundary of the pixel-CENTRE mask, which has a
      sqrt(2) floor and reaches 2 px at the acute corners of strongly foreshortened views (B2/B3
      cameras go to 80 deg), so it cannot express the "< 1 px" re-projection gate;
@@ -20,8 +21,9 @@
      the camera reads as 1.04 px.
   4. ``--align``: the material frames (EXR > 0 where kept, else PNG > 0) and the twin frames
      (``<twin>_png`` > 0) against the projected sample outline of the SAME logged pose. Both renders
-     use Mitsuba's default gaussian filter (radius 4 sigma = 2 px), so a lit pixel outside the
-     outline ("spill") must have its centre within --align-px (default 2.05) of it. Unlit pixels
+     use Mitsuba's default gaussian filter (radius 4 sigma = 2 px, separable: square support), so a
+     lit pixel outside the outline ("spill") must have its centre within --align-px (default 2.05)
+     of it in L-inf distance (Euclidean reported as ``spill_max_px_l2``, bound 2 sqrt(2)). Unlit pixels
      deeper inside than that ("holes") are reported separately: in the material they are genuinely
      dark texels that quantise to 0 in the 8-bit PNG (grazing light), not misalignment; the gate
      requires no holes in the material EXR and in the twin. Also the material/twin mask IoU.
@@ -40,15 +42,20 @@ import numpy as np
 
 
 def load_exr(path):
+    """Linear float RGB. The OpenEXR module first: imageio may route EXR through OpenCV, whose default
+    imread converts to 8 bit (seen on Leonardo with OPENCV_IO_ENABLE_OPENEXR=1: every gate garbage),
+    so a non-float result is refused instead of being checked."""
     try:
-        import imageio.v3 as iio
-        img = iio.imread(path)
-    except Exception:
         import OpenEXR, Imath
         f = OpenEXR.InputFile(str(path)); dw = f.header()["dataWindow"]
         W, H = dw.max.x - dw.min.x + 1, dw.max.y - dw.min.y + 1
         pt = Imath.PixelType(Imath.PixelType.FLOAT)
         img = np.stack([np.frombuffer(f.channel(c, pt), dtype=np.float32).reshape(H, W) for c in "RGB"], -1)
+    except ImportError:
+        import imageio.v3 as iio
+        img = iio.imread(path)
+        if not np.issubdtype(np.asarray(img).dtype, np.floating):
+            raise RuntimeError(f"{path}: EXR decoded as {np.asarray(img).dtype}, not float (an 8-bit reader plugin)")
     return np.asarray(img, dtype=np.float64)[..., :3]
 
 
@@ -142,9 +149,15 @@ def corners_px(meta, rec):
     return out
 
 
-def outline_distance_px(meta, rec, ys, xs):
+def outline_distance_px(meta, rec, ys, xs, norm="linf"):
     """Distance (px) of the pixel centres (ys, xs) to the projected sample outline (the quadrilateral
-    through the four projected corners; lines stay lines under the pinhole projection)."""
+    through the four projected corners; lines stay lines under the pinhole projection).
+
+    ``norm="linf"`` (default) is the Chebyshev distance: Mitsuba's reconstruction filters are
+    separable, so a sample contributes to every pixel whose centre is within the filter radius IN
+    EACH AXIS (a square support: box 0.5 px, gaussian 2 px). A pixel is therefore lit iff its L-inf
+    distance to the sample's outline is below the radius (Euclidean up to radius * sqrt(2); the
+    material EXRs reach 2.81 px Euclidean = 2 sqrt(2) - 0.02). ``norm="l2"``: Euclidean."""
     cs = corners_px(meta, rec)
     if any(c is None for c in cs):
         return None
@@ -152,8 +165,22 @@ def outline_distance_px(meta, rec, ys, xs):
     d = np.full(len(P), np.inf)
     for k in range(4):
         a, b = np.array(cs[k]), np.array(cs[(k + 1) % 4]); e = b - a
-        t = np.clip(((P - a) @ e) / (e @ e), 0.0, 1.0)
-        d = np.minimum(d, np.linalg.norm(P - (a + t[:, None] * e), axis=-1))
+        if norm == "l2":
+            t = np.clip(((P - a) @ e) / (e @ e), 0.0, 1.0)
+            d = np.minimum(d, np.linalg.norm(P - (a + t[:, None] * e), axis=-1))
+            continue
+        # L-inf distance to the segment a + t e: f(t) = max(|wx + t ex|, |wy + t ey|) with w = a - P is
+        # convex piecewise linear; its minimum is at t = 0, 1 or where |x(t)| = |y(t)|.
+        w = a - P
+        cand = [np.zeros(len(P)), np.ones(len(P))]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            if abs(e[0] - e[1]) > 1e-12:
+                cand.append((w[:, 1] - w[:, 0]) / (e[0] - e[1]))
+            if abs(e[0] + e[1]) > 1e-12:
+                cand.append(-(w[:, 0] + w[:, 1]) / (e[0] + e[1]))
+        for t in cand:
+            t = np.clip(t, 0.0, 1.0)
+            d = np.minimum(d, np.maximum(np.abs(w[:, 0] + t * e[0]), np.abs(w[:, 1] + t * e[1])))
     return d
 
 
@@ -171,8 +198,8 @@ def check_alignment(seq_dir, px_tol=2.05, frames=None):
         recs = [r for r in recs if r["index"] in frames]
     twin_keys = sorted(k for k in recs[0]["files"] if k.endswith("_png") and k != "png" and recs[0]["files"][k]) if recs else []
     out = {"sequence": str(seq_dir), "px_tol": px_tol, "twins": twin_keys, "frames_checked": 0,
-           "spill_max_px": {}, "holes_px_total": {}, "holes_frac_max": {}, "material_twin_iou_min": None,
-           "frames": []}
+           "spill_max_px": {}, "spill_max_px_l2": {}, "holes_px_total": {}, "holes_frac_max": {},
+           "material_twin_iou_min": None, "frames": []}
     ious = []
     for rec in recs:
         dv = derive(meta, rec); inside = dv["inside"]
@@ -190,12 +217,15 @@ def check_alignment(seq_dir, px_tol=2.05, frames=None):
             m = loader(seq_dir / rel); masks[key] = m
             ys, xs = np.nonzero(m & ~inside)                  # lit outside: spill
             spill = outline_distance_px(meta, rec, ys, xs) if len(ys) else np.zeros(0)
+            spill2 = outline_distance_px(meta, rec, ys, xs, "l2") if len(ys) else np.zeros(0)
             hy, hx = np.nonzero(inside & ~m)                  # dark inside: near the edge or holes
             hd = outline_distance_px(meta, rec, hy, hx) if len(hy) else np.zeros(0)
             holes = int((hd > px_tol).sum()) if hd is not None else None
             f[key] = {"spill_max_px": float(spill.max()) if spill is not None and len(spill) else 0.0,
                       "holes_px": holes, "holes_frac": None if holes is None else holes / max(int(inside.sum()), 1)}
             out["spill_max_px"][key] = max(out["spill_max_px"].get(key, 0.0), f[key]["spill_max_px"])
+            out["spill_max_px_l2"][key] = max(out["spill_max_px_l2"].get(key, 0.0),
+                                              float(spill2.max()) if spill2 is not None and len(spill2) else 0.0)
             out["holes_px_total"][key] = out["holes_px_total"].get(key, 0) + (holes or 0)
             out["holes_frac_max"][key] = max(out["holes_frac_max"].get(key, 0.0), f[key]["holes_frac"] or 0.0)
         mat = "exr" if "exr" in masks else "png"
@@ -252,7 +282,7 @@ def boundary_distance(mask):
         return None
 
 
-def check_sequence(seq_dir, px_tol=1.0, psnr_min=40.0, frames=None, edge_px=1.0, outline_px=0.75):
+def check_sequence(seq_dir, px_tol=1.0, psnr_min=40.0, frames=None, edge_px=1.0, outline_px=0.52):
     seq_dir = Path(seq_dir)
     meta = json.loads((seq_dir / "metadata.json").read_text())
     recs = [json.loads(l) for l in (seq_dir / "frames.jsonl").read_text().splitlines() if l.strip()]
@@ -277,10 +307,11 @@ def check_sequence(seq_dir, px_tol=1.0, psnr_min=40.0, frames=None, edge_px=1.0,
             f["silhouette_mismatch_frac"] = float(mism.mean())
             f["silhouette_max_px"] = float(dist[mism].max()) if (dist is not None and mism.any()) else 0.0
             my, mx = np.nonzero(mism)
-            od = outline_distance_px(meta, rec, my, mx) if len(my) else np.zeros(0)
-            f["outline_max_px"] = float(od.max()) if od is not None and len(od) else (0.0 if od is not None else None)
-            if f["outline_max_px"] is not None:
-                out["outline_max_px"] = max(out.get("outline_max_px", 0.0), f["outline_max_px"])
+            for key, nrm in (("outline_max_px", "linf"), ("outline_max_px_l2", "l2")):
+                od = outline_distance_px(meta, rec, my, mx, nrm) if len(my) else np.zeros(0)
+                f[key] = float(od.max()) if od is not None and len(od) else (0.0 if od is not None else None)
+                if f[key] is not None:
+                    out[key] = max(out.get(key, 0.0), f[key])
             f["corners_px"] = corners_px(meta, rec)
             f["edge_offset_px"] = edge_offsets_px(meta, rec, img, dv)
             if f["edge_offset_px"] is not None:
@@ -323,7 +354,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("sequence_dir")
     ap.add_argument("--px", type=float, default=1.5, help="unused (kept for old command lines): the pixel-centre silhouette metric is reported, not gated")
-    ap.add_argument("--outline-px", type=float, default=0.75, help="max distance of a mismatched pixel centre to the projected outline (box filter: sqrt(2)/2)")
+    ap.add_argument("--outline-px", type=float, default=0.52, help="max L-inf distance of a mismatched pixel centre to the projected outline (box filter radius 0.5)")
     ap.add_argument("--psnr", type=float, default=40.0)
     ap.add_argument("--edge-px", type=float, default=1.0, help="max |sub-pixel edge offset| (check 2b)")
     ap.add_argument("--frames", default=None, help="comma list of frame indices to check (default all)")

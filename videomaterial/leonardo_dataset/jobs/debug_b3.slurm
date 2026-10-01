@@ -23,8 +23,8 @@
 #   * sha256sum -c MANIFEST.sha256 clean,
 #   * source check exact (render_manifest refuses otherwise) and check_metadata --sources pass,
 #   * white-Lambert gates: sub-pixel edge re-projection < 1 px, every mismatched pixel centre within
-#     the box footprint (sqrt(2)/2 px) of the projected outline, interior irradiance PSNR > 40 dB,
-#   * material (EXR) and twin vs the projected outline of the logged pose: spill <= 2.05 px (gaussian
+#     the box filter support (0.5 px per axis, L-inf) of the projected outline, interior irradiance PSNR > 40 dB,
+#   * material (EXR) and twin vs the projected outline of the logged pose: spill <= 2.05 px L-inf (separable gaussian
 #     filter radius 2 px), no holes in the material EXR or the twin (PNG holes = dark texels, reported),
 #   * metadata setup == "B3", camera.mode == light.mode == "trajectory", generator.commit ==
 #     SYNCED_COMMIT,
@@ -111,7 +111,7 @@ for d in ${DEBUG_SEQS//,/ }; do
     fi
     wl="$VM_B3_RUN_ROOT/debug/white_lambert/$name"
     if [ -f "$wl/frames.jsonl" ]; then
-        python "$VM_PKG_DIR/check_metadata.py" "$wl" --outline-px 0.75 --edge-px 1.0 --psnr 40 \
+        python "$VM_PKG_DIR/check_metadata.py" "$wl" --outline-px 0.52 --edge-px 1.0 --psnr 40 \
             --out "$VM_B3_RUN_ROOT/debug/gates/${name}_white_lambert.json" > /dev/null || status=1
     fi
 done
