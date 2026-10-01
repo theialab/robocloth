@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Render one shard of the B1 dataset: material 314 + the PBR ball twin, one scene load for all.
+"""Render one shard of a dataset manifest (B1 / B2 / B3): material 314 + its twin, one scene load for all.
 
     python render_manifest.py --manifest .../manifest.json --shard 3 --nshards 16 \
         --root $WORK/.../Robocloth_synthetic_sequence/B1_Fixed_camera
+
+B3 (joint camera + light) manifests reference a B1 light path and a B2 camera path per sequence;
+``--source-root`` (the Robocloth_synthetic_sequence directory) makes every sequence compare its
+regenerated poses with the two sources' frames.jsonl, exactly, before anything is rendered.
 
 The expensive part of a sequence is loading the 1.16 GB neural-material checkpoint (~3-6 s) and
 JIT-compiling the kernels (~1 s). This driver pays that once per Slurm task and then walks its whole
@@ -30,17 +34,31 @@ def shard_of(sequences, shard, nshards):
     return sequences[shard::nshards]
 
 
-def render_one(mi, dr, torch, seq, handles, cfgs, render_fn, root: Path, log, do_ball=True, setup="B1", twin="ball"):
+def joint_source_check(poses, source_root):
+    """B3 only: exact comparison with the source sequences (raises on any difference)."""
+    if poses.joint is None:
+        return None
+    if source_root is None:
+        return {"exact": None, "note": "not compared (--no-source-check)"}
+    return L.verify_joint_sources(poses, source_root)
+
+
+def render_one(mi, dr, torch, seq, handles, cfgs, render_fn, root: Path, log, do_ball=True, setup="B1", twin="ball",
+               source_root=None, pairing_master_seed=None):
     out = root / seq["dir"]
-    out.mkdir(parents=True, exist_ok=True)
     started = time.time()
-    poses = L.build_poses(setup, seq["class"], seq["seed"], cfgs["material"].frames)
+    poses = L.poses_for_sequence(seq, setup, cfgs["material"].frames, pairing_master_seed)
+    check = joint_source_check(poses, source_root)       # before any file is written
+    out.mkdir(parents=True, exist_ok=True)
     indices = list(range(cfgs["material"].frames))
 
     meta = L.build_metadata(out, poses, "material", cfgs["material"], handles["material"].material_meta,
                             mi, dr, torch, started, seq["split"], str(Path(__file__).resolve()))
     meta["dataset"] = {"manifest_index": seq["index"], "sequence_id_in_manifest": seq["id"],
                        "split": seq["split"], "keep_exr": bool(seq["keep_exr"])}
+    if poses.joint is not None:
+        meta["dataset"].update(group=seq["group"], light_source=seq["light"], camera_source=seq["camera"])
+        meta["trajectory"]["source_check"] = check
     (out / "metadata.json").write_text(json.dumps(meta, indent=2) + "\n")
 
     exr_dir = (out / "frames_exr") if seq["keep_exr"] else None
@@ -96,7 +114,7 @@ def render_twin_only(mi, dr, torch, seq, handle, cfg, render_fn, root: Path, log
     if not (out / "RENDER_COMPLETE").exists():
         raise RuntimeError(f"{seq['dir']}: material render not complete; twin-only pass refuses to run")
     started = time.time()
-    poses = L.build_poses(setup, seq["class"], seq["seed"], cfg.frames)
+    poses = L.poses_for_sequence(seq, setup, cfg.frames)
     indices = list(range(cfg.frames))
     recs = L.render_poses(mi, handle, indices, poses.cam_pos, poses.light_pos, cfg, render_fn,
                           png_dir=out / f"{twin}_png", exr_dir=None, log=log)
@@ -132,6 +150,14 @@ def main():
     ap.add_argument("--twin-spp", type=int, default=32)
     ap.add_argument("--twin-batch-spp", type=int, default=16)
     ap.add_argument("--limit", type=int, default=None, help="render at most this many sequences (debug runs)")
+    ap.add_argument("--only", default=None,
+                    help="comma list of manifest dirs (e.g. train/pair_0001,test/unseen_light_0001): render exactly these")
+    ap.add_argument("--source-root", type=Path, default=None,
+                    help="joint setups (B3): the Robocloth_synthetic_sequence dir holding the source datasets; every "
+                         "sequence's poses are compared with its sources' frames.jsonl exactly before rendering")
+    ap.add_argument("--no-source-check", action="store_true", help="joint setups: skip the source comparison (local tests)")
+    ap.add_argument("--verify-sources-only", action="store_true",
+                    help="joint setups: compare every sequence of the shard with its sources and exit (no GPU, no render)")
     ap.add_argument("--variant", default="cuda_ad_rgb")
     ap.add_argument("--render-seed", type=int, default=20260922)
     ap.add_argument("--scene-src", type=Path, required=True)
@@ -140,9 +166,42 @@ def main():
     args = ap.parse_args()
 
     man = json.loads(args.manifest.read_text())
-    todo = shard_of(man["sequences"], args.shard, args.nshards)
+    setup = man.get("setup", "B1")
+    joint = setup in L.JOINT_SETUPS
+    if joint and args.source_root is None and not args.no_source_check:
+        ap.error(f"{setup} needs --source-root (or --no-source-check for a local test)")
+    source_root = None if (not joint or args.no_source_check) else args.source_root
+    pairing_seed = man.get("master_seed") if joint else None
+    if args.only:
+        want = [d.strip() for d in args.only.split(",") if d.strip()]
+        by_dir = {s["dir"]: s for s in man["sequences"]}
+        missing = [d for d in want if d not in by_dir]
+        if missing:
+            ap.error(f"--only: not in the manifest: {missing}")
+        todo = [by_dir[d] for d in want]
+    else:
+        todo = shard_of(man["sequences"], args.shard, args.nshards)
     if args.limit:
         todo = todo[: args.limit]
+
+    if args.verify_sources_only:
+        if not joint or source_root is None:
+            ap.error("--verify-sources-only needs a joint manifest and --source-root")
+        import mitsuba as mi  # noqa: E402  (scalar look-at only, no GPU)
+        mi.set_variant("scalar_rgb")
+        t0, worst, bad = time.time(), {}, []
+        for k, seq in enumerate(todo):
+            try:
+                r = L.verify_joint_sources(L.poses_for_sequence(seq, setup, man["frames"]), source_root)
+                for key, v in r.items():
+                    if key.endswith("diff") or key.endswith("diff_deg"):
+                        worst[key] = max(worst.get(key, 0.0), v)
+            except Exception as e:
+                bad.append((seq["dir"], repr(e)[:400]))
+        print(json.dumps({"sequences": len(todo), "exact": len(todo) - len(bad), "mismatched": len(bad),
+                          "max_abs_diffs": worst, "first_failures": bad[:5], "seconds": round(time.time() - t0, 1)},
+                         indent=2))
+        return 1 if bad else 0
 
     logdir = args.root / "logs"
     logdir.mkdir(parents=True, exist_ok=True)
@@ -153,13 +212,13 @@ def main():
         print(f"[{stamp}] {msg}", file=log, flush=True)
         print(f"[{stamp}] {msg}", flush=True)
 
-    say(f"shard {args.shard}/{args.nshards}: {len(todo)} sequences, root={args.root}, setup={man.get('setup','B1')}, twin={man.get('twin','ball')} enabled={not args.no_ball}")
+    say(f"shard {args.shard}/{args.nshards}: {len(todo)} sequences, root={args.root}, setup={man.get('setup','B1')}, twin={man.get('twin','ball')} enabled={not args.no_ball}"
+        + (f", source_root={source_root}" if joint else ""))
 
     import drjit as dr, mitsuba as mi, torch  # noqa: E402
     mi.set_variant(args.variant)
     render_fn = L.load_render_backend(args.rendering_root)
 
-    setup = man.get("setup", "B1")
     twin = man.get("twin", "ball")
     R = man["render"]
     common = dict(max_depth=R["max_depth"], intensity=R["intensity"], frames=man["frames"], fps=man["fps"],
@@ -170,7 +229,7 @@ def main():
             twin: L.RenderConfig(spp=R[twin]["spp"], batch_spp=R[twin]["batch_spp"], **common)}
 
     t0 = time.time()
-    poses0 = L.build_poses(setup, todo[0]["class"], todo[0]["seed"], man["frames"])
+    poses0 = L.poses_for_sequence(todo[0], setup, man["frames"])
     if args.twin_only:
         twin = args.twin_only
         tcfg = L.RenderConfig(spp=args.twin_spp, batch_spp=args.twin_batch_spp, **common)
@@ -213,9 +272,12 @@ def main():
             continue
         gap = None if prev_end is None else time.time() - prev_end
         try:
-            r = render_one(mi, dr, torch, seq, handles, cfgs, render_fn, args.root, log, do_ball=not args.no_ball, setup=setup, twin=twin)
+            r = render_one(mi, dr, torch, seq, handles, cfgs, render_fn, args.root, log, do_ball=not args.no_ball, setup=setup, twin=twin,
+                           source_root=source_root, pairing_master_seed=pairing_seed)
             done += 1
-            say(f"[{k+1}/{len(todo)}] {seq['dir']} seed={seq['seed']} keep_exr={seq['keep_exr']} "
+            src = (f"light={seq['light']['setup_dir']}/{seq['light']['dir']} camera={seq['camera']['setup_dir']}/{seq['camera']['dir']}"
+                   if joint else f"seed={seq['seed']}")
+            say(f"[{k+1}/{len(todo)}] {seq['dir']} {src} keep_exr={seq['keep_exr']} "
                 f"wall={r['wall']:.1f}s material={r['material']:.1f}s ({r['s_per_frame']:.2f} s/frame) "
                 f"{twin}={r['ball']:.1f}s gap_before={'n/a' if gap is None else f'{gap:.2f}s'}")
         except Exception as e:  # one bad sequence must not kill the rest of the shard

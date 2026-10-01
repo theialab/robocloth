@@ -8,6 +8,10 @@ Per frame the camera ``to_world`` and the light position are updated through ``m
 scene, and for ``--mode material`` the 1.16 GB checkpoint, are loaded once). Output chain is exactly
 exp-005: linear float32 EXR, PNG = global Reinhard x/(1+x) -> sRGB (by mi.util.write_bitmap) -> 8-bit.
 
+The poses come either from ``--setup/--cls/--seed`` or from one entry of a dataset manifest
+(``--manifest M --sequence test/unseen_light_0001``), which is how the joint B3 poses are rendered
+in another mode (e.g. ``--mode white_lambert`` for the G0 silhouette / irradiance gates).
+
 Everything but the argument parsing lives in ``seqlib.py``; ``render_manifest.py`` renders whole
 dataset shards through the same functions, so the two drivers produce identical frames.
 """
@@ -26,9 +30,13 @@ from synthetic_sequences import trajectories as T  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--setup", choices=list(L.SETUPS), required=True)
-    ap.add_argument("--cls", choices=list(T.ALL_CLASSES), required=True)
-    ap.add_argument("--seed", type=int, required=True, help="trajectory seed (stored in metadata, never in names)")
+    ap.add_argument("--setup", choices=list(L.SETUPS), default=None)
+    ap.add_argument("--cls", choices=list(T.ALL_CLASSES), default=None)
+    ap.add_argument("--seed", type=int, default=None, help="trajectory seed (stored in metadata, never in names)")
+    ap.add_argument("--manifest", type=Path, default=None, help="take the poses from this dataset manifest ...")
+    ap.add_argument("--sequence", default=None, help="... entry (its dir, e.g. test/unseen_light_0001); replaces --setup/--cls/--seed")
+    ap.add_argument("--source-root", type=Path, default=None,
+                    help="joint manifests: compare the poses with the source sequences' frames.jsonl (exact) first")
     ap.add_argument("--mode", choices=list(L.MODES), required=True)
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--spp", type=int, default=64)
@@ -52,6 +60,18 @@ def main():
     ap.add_argument("--checkpoint-root", default="/media/raid/cloth/output/BRDF/Stage-2-Finals/Ours")
     ap.add_argument("--rendering-root", type=Path, default=Path("/home/zla247/projects/robocloth/rendering"))
     args = ap.parse_args()
+    entry, man = None, None
+    if args.manifest is not None:
+        if args.sequence is None:
+            ap.error("--manifest needs --sequence")
+        man = json.loads(args.manifest.read_text())
+        entry = next((s for s in man["sequences"] if s["dir"] == args.sequence), None)
+        if entry is None:
+            ap.error(f"{args.sequence} is not in {args.manifest}")
+        if man["frames"] != args.frames:
+            ap.error(f"manifest has {man['frames']} frames, --frames says {args.frames}")
+    elif None in (args.setup, args.cls, args.seed):
+        ap.error("give --setup, --cls and --seed, or --manifest and --sequence")
 
     out = args.output
     out.mkdir(parents=True, exist_ok=True)
@@ -68,12 +88,29 @@ def main():
                          ball_roughness=args.ball_roughness, ground_roughness=args.ground_roughness,
                          scene_src=args.scene_src, checkpoint_root=args.checkpoint_root,
                          rendering_root=args.rendering_root)
-    poses = L.build_poses(args.setup, args.cls, args.seed, args.frames, profile=args.profile)
+    if entry is None:
+        poses = L.build_poses(args.setup, args.cls, args.seed, args.frames, profile=args.profile)
+        split = args.split
+    else:
+        setup = man.get("setup", "B1")
+        poses = L.poses_for_sequence(entry, setup, args.frames,
+                                     man.get("master_seed") if setup in L.JOINT_SETUPS else None)
+        split = entry["split"]
+    check = None
+    if poses.joint is not None and args.source_root is not None:
+        check = L.verify_joint_sources(poses, args.source_root)
     handle = L.load_scene(mi, args.mode, poses.cam_pos[0], poses.light_pos[0], cfg, log=log)
     print(f"traverse keys: camera={handle.cam_key} light={handle.light_key}", file=log)
 
     meta = L.build_metadata(out, poses, args.mode, cfg, handle.material_meta, mi, dr, torch,
-                            started, args.split, str(Path(__file__).resolve()))
+                            started, split, str(Path(__file__).resolve()))
+    if entry is not None:
+        meta["dataset"] = {"manifest": str(args.manifest.resolve()), "manifest_index": entry["index"],
+                           "sequence_id_in_manifest": entry["id"], "split": entry["split"],
+                           "note": f"rendered by render_sequence.py in mode {args.mode} from this manifest entry"}
+        if poses.joint is not None:
+            meta["dataset"].update(group=entry["group"], light_source=entry["light"], camera_source=entry["camera"])
+            meta["trajectory"]["source_check"] = check
     (out / "metadata.json").write_text(json.dumps(meta, indent=2) + "\n")
 
     indices = list(range(args.frames)) if args.frame_indices is None else [int(x) for x in args.frame_indices.split(",")]
