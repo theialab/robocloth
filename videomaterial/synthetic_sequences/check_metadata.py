@@ -4,19 +4,27 @@
 
   1. derivability: per-pixel camera rays (o ⊕ d) in the sample frame, hit points on y = 0, incident
      direction ω_i, cos θ_i / r², analytic Lambertian irradiance E = I cos θ_i / r²;
-  2. silhouette: analytic inside-sample mask vs rendered mask (EXR > 0): every mismatched pixel
-     must lie within --px (default 1.5 = diagonal neighbour) of the analytic boundary;
+  2. silhouette: analytic inside-sample mask vs rendered mask (EXR > 0). Gate (``outline_max_px``):
+     the centre of every mismatched pixel lies within the box filter's half-footprint (sqrt(2)/2 px,
+     --outline-px default 0.75) of the projected sample outline (the quadrilateral through the four
+     projected corners) - a pixel is lit iff its square touches the sample. Also reported, not
+     gated: ``silhouette_max_px``, the distance to the boundary of the pixel-CENTRE mask, which has a
+     sqrt(2) floor and reaches 2 px at the acute corners of strongly foreshortened views (B2/B3
+     cameras go to 80 deg), so it cannot express the "< 1 px" re-projection gate;
   3. irradiance: analytic radiance E/π (albedo 1, direct light only) vs the rendered EXR; PSNR over the
      3-px-eroded interior must exceed --psnr dB (full-mask PSNR is also reported; edge pixels cap it).
   2b. edge re-projection (sub-pixel): the box-filtered white-Lambert render gives each pixel's
      covered fraction (render / analytic radiance); summed over a band around each projected sample
      edge and divided by the edge length it is that edge's offset in px against the analytic coverage
-     (8x8 supersampled). ``edge_offset_px_max`` must stay below --edge-px (default 1.0). The pixel
-     silhouette metric of check 2 cannot go below sqrt(2) at a corner (a partially covered diagonal
-     pixel), which is why the "< 1 px" re-projection gate is evaluated on this metric.
-  4. ``--align``: the material frames and the twin frames (``<twin>_png``) against the analytic sample
-     mask of the SAME logged pose (both renders use Mitsuba's default gaussian filter, so the edge
-     tolerance is --align-px = 2.5 px); also reports the projected sample corners per frame.
+     (8x8 supersampled). ``edge_offset_px_max`` must stay below --edge-px (default 1.0); a 1-px yaw of
+     the camera reads as 1.04 px.
+  4. ``--align``: the material frames (EXR > 0 where kept, else PNG > 0) and the twin frames
+     (``<twin>_png`` > 0) against the projected sample outline of the SAME logged pose. Both renders
+     use Mitsuba's default gaussian filter (radius 4 sigma = 2 px), so a lit pixel outside the
+     outline ("spill") must have its centre within --align-px (default 2.05) of it. Unlit pixels
+     deeper inside than that ("holes") are reported separately: in the material they are genuinely
+     dark texels that quantise to 0 in the 8-bit PNG (grazing light), not misalignment; the gate
+     requires no holes in the material EXR and in the twin. Also the material/twin mask IoU.
   5. ``--sources DATA_ROOT`` (joint B3 sequences): per frame, camera position / c2w / angles must equal
      the B2 source's frames.jsonl and light position / angles / distance the B1 source's, exactly.
 Works for every setup: the camera and the light are read per frame, so B3's jointly moving camera
@@ -134,44 +142,75 @@ def corners_px(meta, rec):
     return out
 
 
+def outline_distance_px(meta, rec, ys, xs):
+    """Distance (px) of the pixel centres (ys, xs) to the projected sample outline (the quadrilateral
+    through the four projected corners; lines stay lines under the pinhole projection)."""
+    cs = corners_px(meta, rec)
+    if any(c is None for c in cs):
+        return None
+    P = np.stack([np.asarray(xs) + 0.5, np.asarray(ys) + 0.5], -1).astype(np.float64)
+    d = np.full(len(P), np.inf)
+    for k in range(4):
+        a, b = np.array(cs[k]), np.array(cs[(k + 1) % 4]); e = b - a
+        t = np.clip(((P - a) @ e) / (e @ e), 0.0, 1.0)
+        d = np.minimum(d, np.linalg.norm(P - (a + t[:, None] * e), axis=-1))
+    return d
+
+
 def load_png_mask(path):
     from PIL import Image
     return np.asarray(Image.open(path).convert("RGB")).astype(np.int32).sum(-1) > 0
 
 
-def check_alignment(seq_dir, px_tol=2.5, frames=None):
-    """Material and twin frames vs the analytic sample silhouette of the logged pose (``--align``)."""
+def check_alignment(seq_dir, px_tol=2.05, frames=None):
+    """Material and twin frames vs the projected sample outline of the logged pose (``--align``)."""
     seq_dir = Path(seq_dir)
     meta = json.loads((seq_dir / "metadata.json").read_text())
     recs = [json.loads(l) for l in (seq_dir / "frames.jsonl").read_text().splitlines() if l.strip()]
     if frames is not None:
         recs = [r for r in recs if r["index"] in frames]
-    twin_keys = sorted(k for k in recs[0]["files"] if k.endswith("_png") and k != "png") if recs else []
+    twin_keys = sorted(k for k in recs[0]["files"] if k.endswith("_png") and k != "png" and recs[0]["files"][k]) if recs else []
     out = {"sequence": str(seq_dir), "px_tol": px_tol, "twins": twin_keys, "frames_checked": 0,
-           "max_px": {}, "mismatch_frac_max": {}, "material_twin_iou_min": None, "frames": []}
+           "spill_max_px": {}, "holes_px_total": {}, "holes_frac_max": {}, "material_twin_iou_min": None,
+           "frames": []}
     ious = []
     for rec in recs:
-        dv = derive(meta, rec); inside = dv["inside"]; dist = boundary_distance(inside)
+        dv = derive(meta, rec); inside = dv["inside"]
         f = {"index": rec["index"], "corners_px": corners_px(meta, rec)}
         masks = {}
-        for key in ["png"] + twin_keys:
+        keys = []
+        if rec["files"].get("exr") and (seq_dir / rec["files"]["exr"]).exists():
+            keys.append(("exr", lambda p: load_exr(p).sum(-1) > 0))
+        keys.append(("png", load_png_mask))
+        keys += [(k, load_png_mask) for k in twin_keys]
+        for key, loader in keys:
             rel = rec["files"].get(key)
             if not rel or not (seq_dir / rel).exists():
                 f[key] = None; continue
-            m = load_png_mask(seq_dir / rel); masks[key] = m
-            mism = m ^ inside
-            mx = float(dist[mism].max()) if (dist is not None and mism.any()) else 0.0
-            f[key] = {"mismatch_frac": float(mism.mean()), "max_px": mx}
-            out["max_px"][key] = max(out["max_px"].get(key, 0.0), mx)
-            out["mismatch_frac_max"][key] = max(out["mismatch_frac_max"].get(key, 0.0), float(mism.mean()))
+            m = loader(seq_dir / rel); masks[key] = m
+            ys, xs = np.nonzero(m & ~inside)                  # lit outside: spill
+            spill = outline_distance_px(meta, rec, ys, xs) if len(ys) else np.zeros(0)
+            hy, hx = np.nonzero(inside & ~m)                  # dark inside: near the edge or holes
+            hd = outline_distance_px(meta, rec, hy, hx) if len(hy) else np.zeros(0)
+            holes = int((hd > px_tol).sum()) if hd is not None else None
+            f[key] = {"spill_max_px": float(spill.max()) if spill is not None and len(spill) else 0.0,
+                      "holes_px": holes, "holes_frac": None if holes is None else holes / max(int(inside.sum()), 1)}
+            out["spill_max_px"][key] = max(out["spill_max_px"].get(key, 0.0), f[key]["spill_max_px"])
+            out["holes_px_total"][key] = out["holes_px_total"].get(key, 0) + (holes or 0)
+            out["holes_frac_max"][key] = max(out["holes_frac_max"].get(key, 0.0), f[key]["holes_frac"] or 0.0)
+        mat = "exr" if "exr" in masks else "png"
         for k in twin_keys:
-            if "png" in masks and k in masks:
-                inter = (masks["png"] & masks[k]).sum(); union = (masks["png"] | masks[k]).sum()
-                f[f"iou_png_{k}"] = float(inter / max(union, 1)); ious.append(f[f"iou_png_{k}"])
+            if mat in masks and k in masks:
+                inter = (masks[mat] & masks[k]).sum(); union = (masks[mat] | masks[k]).sum()
+                f[f"iou_{mat}_{k}"] = float(inter / max(union, 1)); ious.append(f[f"iou_{mat}_{k}"])
         out["frames"].append(f); out["frames_checked"] += 1
     out["material_twin_iou_min"] = float(min(ious)) if ious else None
-    out["pass"] = bool(out["frames_checked"]) and all(v <= px_tol for v in out["max_px"].values()) \
-        and len(out["max_px"]) == 1 + len(twin_keys)
+    gated = [k for k in out["spill_max_px"]]
+    out["pass_spill"] = bool(gated) and all(out["spill_max_px"][k] <= px_tol for k in gated)
+    hole_keys = (["exr"] if "exr" in out["holes_px_total"] else []) + twin_keys
+    out["pass_holes"] = all(out["holes_px_total"].get(k, 0) == 0 for k in hole_keys)
+    out["pass"] = bool(out["frames_checked"]) and out["pass_spill"] and out["pass_holes"] \
+        and all(k in out["spill_max_px"] for k in ["png"] + twin_keys)
     return out
 
 
@@ -213,7 +252,7 @@ def boundary_distance(mask):
         return None
 
 
-def check_sequence(seq_dir, px_tol=1.0, psnr_min=40.0, frames=None, edge_px=1.0):
+def check_sequence(seq_dir, px_tol=1.0, psnr_min=40.0, frames=None, edge_px=1.0, outline_px=0.75):
     seq_dir = Path(seq_dir)
     meta = json.loads((seq_dir / "metadata.json").read_text())
     recs = [json.loads(l) for l in (seq_dir / "frames.jsonl").read_text().splitlines() if l.strip()]
@@ -237,6 +276,11 @@ def check_sequence(seq_dir, px_tol=1.0, psnr_min=40.0, frames=None, edge_px=1.0)
             dist = boundary_distance(dv["inside"])
             f["silhouette_mismatch_frac"] = float(mism.mean())
             f["silhouette_max_px"] = float(dist[mism].max()) if (dist is not None and mism.any()) else 0.0
+            my, mx = np.nonzero(mism)
+            od = outline_distance_px(meta, rec, my, mx) if len(my) else np.zeros(0)
+            f["outline_max_px"] = float(od.max()) if od is not None and len(od) else (0.0 if od is not None else None)
+            if f["outline_max_px"] is not None:
+                out["outline_max_px"] = max(out.get("outline_max_px", 0.0), f["outline_max_px"])
             f["corners_px"] = corners_px(meta, rec)
             f["edge_offset_px"] = edge_offsets_px(meta, rec, img, dv)
             if f["edge_offset_px"] is not None:
@@ -266,7 +310,7 @@ def check_sequence(seq_dir, px_tol=1.0, psnr_min=40.0, frames=None, edge_px=1.0)
         out["irradiance_psnr_db_interior_min"] = float(min(interior)) if interior else None
         # A binary pixel-centre mask vs an anti-aliased render differs by partially covered boundary
         # pixels (<= 1 px, sqrt(2) on diagonals); the edge also caps the full-mask PSNR (~35-40 dB).
-        out["pass_silhouette"] = out["silhouette_max_px"] <= px_tol
+        out["pass_silhouette"] = out.get("outline_max_px") is not None and out["outline_max_px"] <= outline_px
         out["pass_irradiance"] = (out["irradiance_psnr_db_interior_min"] if interior else out["irradiance_psnr_db_min"]) >= psnr_min
         out["pass_edge_offset"] = out.get("edge_offset_px_max") is not None and out["edge_offset_px_max"] < edge_px
         out["pass"] = out["pass_silhouette"] and out["pass_irradiance"] and out["pass_edge_offset"]
@@ -278,17 +322,18 @@ def check_sequence(seq_dir, px_tol=1.0, psnr_min=40.0, frames=None, edge_px=1.0)
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("sequence_dir")
-    ap.add_argument("--px", type=float, default=1.5, help="max boundary offset in px (sqrt(2) = diagonal neighbour of a partially covered pixel)")
+    ap.add_argument("--px", type=float, default=1.5, help="unused (kept for old command lines): the pixel-centre silhouette metric is reported, not gated")
+    ap.add_argument("--outline-px", type=float, default=0.75, help="max distance of a mismatched pixel centre to the projected outline (box filter: sqrt(2)/2)")
     ap.add_argument("--psnr", type=float, default=40.0)
     ap.add_argument("--edge-px", type=float, default=1.0, help="max |sub-pixel edge offset| (check 2b)")
     ap.add_argument("--frames", default=None, help="comma list of frame indices to check (default all)")
     ap.add_argument("--out", default=None)
     ap.add_argument("--align", action="store_true", help="material + twin PNGs vs the analytic silhouette (check 4)")
-    ap.add_argument("--align-px", type=float, default=2.5)
+    ap.add_argument("--align-px", type=float, default=2.05, help="gaussian filter radius (2 px) + margin")
     ap.add_argument("--sources", default=None, help="joint sequences: the Robocloth_synthetic_sequence dir (check 5)")
     a = ap.parse_args()
     frames = None if a.frames is None else {int(x) for x in a.frames.split(",")}
-    res = check_sequence(a.sequence_dir, a.px, a.psnr, frames, a.edge_px)
+    res = check_sequence(a.sequence_dir, a.px, a.psnr, frames, a.edge_px, a.outline_px)
     if a.align:
         res["alignment"] = check_alignment(a.sequence_dir, a.align_px, frames)
     if a.sources:

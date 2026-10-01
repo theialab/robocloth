@@ -310,3 +310,31 @@ def test_b1_b2_full_manifests_rebuild_identically():
     for setup, seed in (("B1", 20260922), ("B2", 20260923)):
         fp = _fingerprint(M.build(master_seed=seed, verbose=False, setup=setup))
         assert fp == FINGERPRINTS[setup], f"{setup} manifest changed: {fp}"
+
+
+def test_outline_distance_is_distance_to_projected_quad():
+    """check_metadata.outline_distance_px: 0 on the projected edges, = Euclidean distance to a corner
+    outside it, and the pixel-centre inside mask agrees with the projected quadrilateral."""
+    import mitsuba as mi
+    mi.set_variant("scalar_rgb")
+    m = _b3_small()
+    s = m["sequences"][0]
+    p = L.poses_for_sequence(s, "B3", 81, m["master_seed"])
+    mi_, dr, torch = _stub_modules()
+    with tempfile.TemporaryDirectory(prefix="b3_outline_") as root:
+        out = Path(root) / "B3_Joint" / s["dir"]; out.mkdir(parents=True)
+        meta = L.build_metadata(out, p, "material", L.RenderConfig(), {"kind": "stub"}, mi_, dr, torch, 0.0, s["split"], "x")
+    for idx in (0, 40, 80):
+        rec = {"camera": {"c2w": L.S.transform_to_list(L.S.look_at_matrix(p.cam_pos[idx]))},
+               "light": {"position": p.light_pos[idx].tolist()}}
+        cs = CM.corners_px(meta, rec)
+        a, b = np.array(cs[0]), np.array(cs[1])
+        mid = (a + b) / 2 - 0.5                        # a pixel whose centre is the edge midpoint
+        assert CM.outline_distance_px(meta, rec, [mid[1]], [mid[0]])[0] < 1e-6
+        out_pt = a + 3.0 * (a - (np.array(cs[2]) + a) / 2) / np.linalg.norm(a - (np.array(cs[2]) + a) / 2)
+        d = CM.outline_distance_px(meta, rec, [out_pt[1] - 0.5], [out_pt[0] - 0.5])[0]
+        assert abs(d - 3.0) < 1e-6, d                   # beyond corner a along the diagonal
+        dv = CM.derive(meta, rec)
+        ys, xs = np.nonzero(dv["inside"])
+        far_inside = CM.outline_distance_px(meta, rec, ys, xs) > 0.01
+        assert far_inside.mean() > 0.95                 # mask pixels lie inside the quad
