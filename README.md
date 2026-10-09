@@ -19,7 +19,7 @@ Material Dataset for Neural Reflectance Reconstruction*.
 [Andrea Tagliasacchi](https://taiya.github.io)<sup>1,5,6</sup>
 
 <sup>1</sup> Simon Fraser University &nbsp;&nbsp; <sup>2</sup> Westlake University &nbsp;&nbsp; <sup>3</sup> University of Torino &nbsp;&nbsp;
-<sup>4</sup> University of British Columbia &nbsp;&nbsp; <sup>5</sup> Wayve &nbsp;&nbsp; <sup>6</sup> University of Toronto
+<sup>4</sup> University of British Columbia &nbsp;&nbsp; <sup>5</sup> Wayve Labs &nbsp;&nbsp; <sup>6</sup> University of Toronto
 
 <sup>\*</sup> Co-first authors
 

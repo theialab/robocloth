@@ -16,10 +16,10 @@ authors:
     affiliation: "University of Torino and Simon Fraser University"
   - family-names: "Rebain"
     given-names: "Daniel"
-    affiliation: "University of British Columbia and Wayve"
+    affiliation: "University of British Columbia and Wayve Labs"
   - family-names: "Tagliasacchi"
     given-names: "Andrea"
-    affiliation: "Simon Fraser University, Wayve and University of Toronto"
+    affiliation: "Simon Fraser University, Wayve Labs and University of Toronto"
 keywords:
   - cloth
   - BRDF
