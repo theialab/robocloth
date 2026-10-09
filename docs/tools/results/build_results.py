@@ -69,8 +69,8 @@ RELATED_COLS = {
     "Flexible Coverage": "Flexible coverage",
 }
 RELATED_NUMERIC = ("Publication Year", "Dataset Scale")   # the rest are check / cross columns
-RELATED_BASELINES = ("UBO2014", "UBOFAB19")               # highlighted + tagged "main baseline"
-RELATED_TAGS = {OURS: "ours", "UBO2014": "main baseline", "UBOFAB19": "main baseline"}
+RELATED_BASELINES = ("MERL", "UBO2014", "UBOFAB19")       # highlighted + tagged "main baseline"
+RELATED_TAGS = {OURS: "ours", "MERL": "main baseline", "UBO2014": "main baseline", "UBOFAB19": "main baseline"}
 
 # page palette (css/style.css :root) + chart neutrals
 INK = "#2b2b2b"          # --brand
