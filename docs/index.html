@@ -147,8 +147,8 @@
         <li><a href="#abstract">Overview</a></li>
         <li><a href="#method">Method</a></li>
         <li><a href="#apply">Apply</a></li>
-        <li><a href="#main-viz">Results</a></li>
         <li><a href="#preview">Dataset Preview</a></li>
+        <li><a href="#main-viz">Results</a></li>
         <li><a href="#citation">Citation</a></li>
     </ol>
 </nav>
@@ -297,6 +297,68 @@
      "BEGIN/END generated:results-*" and the text of each <span data-res="..."> are
      regenerated from the parsed tables, so edit the tool (or the tables), never the numbers.
      Styles: css/results.css. -->
+<!-- ============================  DATASET PREVIEW  ============================ -->
+<section id="preview" class="page-section">
+    <h3 class="cloth-title"><img src="images/titles/dataset-preview.png?v=3" alt="" width="897" height="99" decoding="async"><span class="sr-only">Dataset Preview</span></h3>
+    <div class="section-rule"></div>
+    <p class="lead-text" style="text-align:center;color:var(--muted);">
+        The dataset is split into a <b>train</b> set and a <b>test</b> set
+        following the official lists in
+        <code>globals/training_list_500.txt</code> /
+        <code>globals/test_list_500.txt</code>.
+        20 train and 5 test materials are shown as thumbnails below;
+        every one of the remaining materials is linked further down so
+        you can browse all <b id="train-total">400</b>&nbsp;+&nbsp;<b id="test-total">100</b>
+        without leaving this page.
+    </p>
+
+    <!-- Train preview -->
+    <h4 class="split-heading">
+        <span class="split-chip train">Train</span>
+        <span class="split-heading-tail">20 of <b id="train-count">400</b> shown</span>
+    </h4>
+    <div id="train-preview-grid" class="preview-grid">
+        <div class="status-line"><span class="spinner"></span> Loading preview manifest…</div>
+    </div>
+
+    <!-- Test preview -->
+    <h4 class="split-heading" style="margin-top:2.5rem">
+        <span class="split-chip test">Test</span>
+        <span class="split-heading-tail">5 of <b id="test-count">100</b> shown</span>
+    </h4>
+    <div id="test-preview-grid" class="preview-grid"></div>
+
+    <!-- Full ID lists -->
+    <h4 class="split-heading" style="margin-top:3rem">
+        <span class="split-chip train">Train</span>
+        <span class="split-heading-tail">all material IDs</span>
+    </h4>
+    <div id="train-all-list" class="id-pill-list"></div>
+
+    <h4 class="split-heading" style="margin-top:2rem">
+        <span class="split-chip test">Test</span>
+        <span class="split-heading-tail">all material IDs</span>
+    </h4>
+    <div id="test-all-list" class="id-pill-list"></div>
+</section>
+
+<script>
+    // Mirror the counts header (the bigger top numbers) into the inline
+    // heading suffixes so they stay in sync with the manifest.
+    document.addEventListener("DOMContentLoaded", () => {
+        const sync = (from, to) => {
+            const obs = new MutationObserver(() => {
+                const t = document.getElementById(to);
+                if (t) t.textContent = document.getElementById(from).textContent;
+            });
+            const src = document.getElementById(from);
+            if (src) obs.observe(src, { childList: true, characterData: true, subtree: true });
+        };
+        sync("train-total", "train-count");
+        sync("test-total",  "test-count");
+    });
+</script>
+
 <section id="main-viz" class="page-section">
     <h3 class="cloth-title"><img src="images/titles/results.png?v=3" alt="" width="389" height="102" decoding="async"><span class="sr-only">Results</span></h3>
     <div class="section-rule"></div>
@@ -537,68 +599,6 @@
   </figure>
     </div>
 </section>
-
-<!-- ============================  DATASET PREVIEW  ============================ -->
-<section id="preview" class="page-section">
-    <h3 class="cloth-title"><img src="images/titles/dataset-preview.png?v=3" alt="" width="897" height="99" decoding="async"><span class="sr-only">Dataset Preview</span></h3>
-    <div class="section-rule"></div>
-    <p class="lead-text" style="text-align:center;color:var(--muted);">
-        The dataset is split into a <b>train</b> set and a <b>test</b> set
-        following the official lists in
-        <code>globals/training_list_500.txt</code> /
-        <code>globals/test_list_500.txt</code>.
-        20 train and 5 test materials are shown as thumbnails below;
-        every one of the remaining materials is linked further down so
-        you can browse all <b id="train-total">400</b>&nbsp;+&nbsp;<b id="test-total">100</b>
-        without leaving this page.
-    </p>
-
-    <!-- Train preview -->
-    <h4 class="split-heading">
-        <span class="split-chip train">Train</span>
-        <span class="split-heading-tail">20 of <b id="train-count">400</b> shown</span>
-    </h4>
-    <div id="train-preview-grid" class="preview-grid">
-        <div class="status-line"><span class="spinner"></span> Loading preview manifest…</div>
-    </div>
-
-    <!-- Test preview -->
-    <h4 class="split-heading" style="margin-top:2.5rem">
-        <span class="split-chip test">Test</span>
-        <span class="split-heading-tail">5 of <b id="test-count">100</b> shown</span>
-    </h4>
-    <div id="test-preview-grid" class="preview-grid"></div>
-
-    <!-- Full ID lists -->
-    <h4 class="split-heading" style="margin-top:3rem">
-        <span class="split-chip train">Train</span>
-        <span class="split-heading-tail">all material IDs</span>
-    </h4>
-    <div id="train-all-list" class="id-pill-list"></div>
-
-    <h4 class="split-heading" style="margin-top:2rem">
-        <span class="split-chip test">Test</span>
-        <span class="split-heading-tail">all material IDs</span>
-    </h4>
-    <div id="test-all-list" class="id-pill-list"></div>
-</section>
-
-<script>
-    // Mirror the counts header (the bigger top numbers) into the inline
-    // heading suffixes so they stay in sync with the manifest.
-    document.addEventListener("DOMContentLoaded", () => {
-        const sync = (from, to) => {
-            const obs = new MutationObserver(() => {
-                const t = document.getElementById(to);
-                if (t) t.textContent = document.getElementById(from).textContent;
-            });
-            const src = document.getElementById(from);
-            if (src) obs.observe(src, { childList: true, characterData: true, subtree: true });
-        };
-        sync("train-total", "train-count");
-        sync("test-total",  "test-count");
-    });
-</script>
 
 <!-- ============================  CITATION  ============================ -->
 <section id="citation" class="page-section">
