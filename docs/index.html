@@ -45,7 +45,7 @@
     <link rel="stylesheet" href="css/style.css?v=43">
     <link rel="stylesheet" href="css/title_anim.css?v=3">
     <link rel="stylesheet" href="css/hero_curtain.css?v=1">
-    <link rel="stylesheet" href="css/results.css?v=5">
+    <link rel="stylesheet" href="css/results.css?v=6">
 </head>
 <body>
 
@@ -462,6 +462,80 @@
             <!-- END generated:results-chart -->
         </div>
     </figure>
+
+    <h4 class="res-subtitle" id="results-qualitative">Qualitative comparisons</h4>
+    <p class="lead-text res-setup">
+        All qualitative results, at full size &mdash; same protocol as above, same scene, mesh and lighting in every
+        cell. Columns are the decoder trained on <b>RoboCloth</b>, <b>UBOFAB19</b> or <b>MERL</b>, the analytic
+        <b>PBR</b> fit, and the <b>ground truth</b> where one exists. Click a figure to open it at full resolution.
+    </p>
+
+    <figure class="res-figure qual-fig qual-wide">
+        <a class="res-card qual-card" href="images/results/qual/supp/ubo2014_zoom_3.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+            <img src="images/results/qual/supp/ubo2014_zoom_3.jpg?v=1" width="2484" height="1531" loading="lazy" decoding="async" alt="">
+        </a>
+        <figcaption><b>UBO2014, close-up.</b> Three held-out materials (carpet12, fabric02, felt01) relit in a common scene. Each cell insets a magnified crop of the boxed region, and the number in each cell is the PSNR (dB) of the rendered image against the ground-truth render. Only the RoboCloth decoder matches the ground-truth colour while keeping both the highlight at the fold and the fuzzy weave detail.</figcaption>
+    </figure>
+
+    <div class="qual-grid">
+    <figure class="res-figure qual-fig">
+        <a class="res-card qual-card" href="images/results/qual/supp/ubo2014_materials_1-6.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+            <img src="images/results/qual/supp/ubo2014_materials_1-6.jpg?v=1" width="2484" height="2987" loading="lazy" decoding="async" alt="">
+        </a>
+        <figcaption><b>UBO2014, materials 1&ndash;6</b> (carpet02, carpet07, carpet09, carpet12, fabric02, fabric04). Across all 12 held-out materials the RoboCloth decoder most consistently matches the ground truth in both colour and weave texture.</figcaption>
+    </figure>
+    <figure class="res-figure qual-fig">
+        <a class="res-card qual-card" href="images/results/qual/supp/ubo2014_materials_7-12.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+            <img src="images/results/qual/supp/ubo2014_materials_7-12.jpg?v=1" width="2484" height="2987" loading="lazy" decoding="async" alt="">
+        </a>
+        <figcaption><b>UBO2014, materials 7&ndash;12</b> (fabric09, fabric11, felt01, felt03, felt05, felt10).</figcaption>
+    </figure>
+    <figure class="res-figure qual-fig">
+        <a class="res-card qual-card" href="images/results/qual/supp/robocloth_test_5.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+            <img src="images/results/qual/supp/robocloth_test_5.jpg?v=1" width="2484" height="3108" loading="lazy" decoding="async" alt="">
+        </a>
+        <figcaption><b>RoboCloth test set.</b> Five held-out materials from our own dataset. No ground-truth render exists for a captured material, so compare against the photographs in the image-space figures below; the RoboCloth decoder recovers the sharpest and most faithful texture and colour.</figcaption>
+    </figure>
+    <figure class="res-figure qual-fig">
+        <a class="res-card qual-card" href="images/results/qual/supp/ubofab19_test_5.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+            <img src="images/results/qual/supp/ubofab19_test_5.jpg?v=1" width="2484" height="3108" loading="lazy" decoding="async" alt="">
+        </a>
+        <figcaption><b>UBOFAB19 test set.</b> Five held-out UBOFAB19 materials. On its own distribution the UBOFAB19-trained decoder is strongest, with the RoboCloth decoder a close second; both clearly outperform the MERL decoder and the PBR fit.</figcaption>
+    </figure>
+    </div>
+
+    <div class="qual-grid">
+  <figure class="res-figure qual-fig">
+    <a class="res-card qual-card" href="images/results/qual/supp/imgspace_226.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+      <img src="images/results/qual/supp/imgspace_226.jpg?v=1" width="2484" height="1421" loading="lazy" decoding="async" alt="">
+    </a>
+    <figcaption><b>Image-space comparison, material 226.</b> Reconstructions rendered into four captured views and compared with the photographs. RoboCloth reproduces the ground-truth colour; the UBOFAB19 and MERL reconstructions drift toward yellow and magenta.</figcaption>
+  </figure>
+  <figure class="res-figure qual-fig">
+    <a class="res-card qual-card" href="images/results/qual/supp/imgspace_452.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+      <img src="images/results/qual/supp/imgspace_452.jpg?v=1" width="2484" height="1613" loading="lazy" decoding="async" alt="">
+    </a>
+    <figcaption><b>Image-space comparison, material 452.</b> Reconstructions rendered into four captured views and compared with the photographs. RoboCloth recovers more of the specular highlight.</figcaption>
+  </figure>
+  <figure class="res-figure qual-fig">
+    <a class="res-card qual-card" href="images/results/qual/supp/imgspace_370.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+      <img src="images/results/qual/supp/imgspace_370.jpg?v=1" width="2484" height="1588" loading="lazy" decoding="async" alt="">
+    </a>
+    <figcaption><b>Image-space comparison, material 370.</b> Reconstructions rendered into four captured views and compared with the photographs. RoboCloth stays sharper at the grazing views, where the other methods blur the weave.</figcaption>
+  </figure>
+  <figure class="res-figure qual-fig">
+    <a class="res-card qual-card" href="images/results/qual/supp/imgspace_314.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+      <img src="images/results/qual/supp/imgspace_314.jpg?v=1" width="2484" height="1372" loading="lazy" decoding="async" alt="">
+    </a>
+    <figcaption><b>Image-space comparison, material 314.</b> Reconstructions rendered into four captured views and compared with the photographs. </figcaption>
+  </figure>
+  <figure class="res-figure qual-fig">
+    <a class="res-card qual-card" href="images/results/qual/supp/imgspace_145.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">
+      <img src="images/results/qual/supp/imgspace_145.jpg?v=1" width="2484" height="1486" loading="lazy" decoding="async" alt="">
+    </a>
+    <figcaption><b>Image-space comparison, material 145.</b> Reconstructions rendered into four captured views and compared with the photographs. </figcaption>
+  </figure>
+    </div>
 </section>
 
 <!-- ============================  DATASET PREVIEW  ============================ -->

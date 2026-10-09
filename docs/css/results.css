@@ -198,3 +198,30 @@
 
 /* the datasets table opens the section: its heading sits right under the rule */
 .section-rule + .res-subtitle { margin-top: 0.6rem; }
+
+/* --------  qualitative galleries (moved here from the paper's supplement)  -------- */
+
+.qual-fig { margin-top: 1.6rem; }
+.qual-card {
+    display: block;
+    padding: 0.6rem;
+    text-decoration: none;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.qual-card:hover { box-shadow: 0 2px 6px rgba(20, 30, 50, 0.08), 0 14px 32px rgba(20, 30, 50, 0.10); transform: translateY(-1px); }
+.qual-card img { display: block; width: 100%; height: auto; border-radius: 6px; }
+.qual-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0;
+    align-items: start;
+}
+.qual-grid .qual-fig { min-width: 0; }
+.qual-grid .res-card { margin: 0 0.5rem 0 1rem; }
+.qual-grid .qual-fig:nth-child(2n) .res-card { margin: 0 1rem 0 0.5rem; }
+.qual-grid .qual-fig:nth-child(2n) figcaption { margin-left: 0.5rem; }
+@media (max-width: 820px) {
+    .qual-grid { grid-template-columns: 1fr; }
+    .qual-grid .res-card, .qual-grid .qual-fig:nth-child(2n) .res-card { margin: 0 1rem; }
+    .qual-grid .qual-fig:nth-child(2n) figcaption { margin-left: 1rem; }
+}
