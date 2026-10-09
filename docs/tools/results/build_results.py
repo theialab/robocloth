@@ -52,6 +52,7 @@ SETS = {
     "bonn": dict(title="Bonn test set", source="ours.tex"),
 }
 OURS = "RoboCloth"
+OURS_YEAR = "2026"                 # release year; the paper's table leaves our own row blank
 CHART_SET = "ubo2014"             # the only test set on the page
 # second line under each method name in the chart
 METHOD_SUB = {"RoboCloth": "ours", "Bonn": "UBOFAB19", "MERL": "", "PBR": "analytic fit"}
@@ -190,7 +191,8 @@ def parse_related(path: str) -> dict:
             int(year)
         int(scale.replace(",", ""))
         rows.append({"name": _clean(cells[0]), "cite": m.group(1) if m else None,
-                     "year": year, "scale": scale, "flags": flags})
+                     "year": (OURS_YEAR if (year == "--" and _clean(cells[0]).startswith("RoboCloth")) else year),
+                     "scale": scale, "flags": flags})
     if not columns or not rows:
         raise ValueError(f"{path}: no tabular data found")
     if rows[-1]["name"] != OURS:
