@@ -13,7 +13,7 @@ Material Dataset for Neural Reflectance Reconstruction*.
 [![Checkpoints and assets on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Checkpoints%20%26%20assets-RoboCloth--assets-ffb000)](https://huggingface.co/datasets/koalapenguin/RoboCloth-assets)
 
 [Zhen (Colin) Li](https://colinzhenli.github.io)<sup>1\*</sup>,
-Haoran Qin<sup>2\*</sup>,
+[Haoran Qin](https://peppasaur.github.io/)<sup>2\*</sup>,
 [Francesco Di Sario](https://scholar.google.com/citations?user=wjOMl_8AAAAJ)<sup>3,1</sup>,
 [Daniel Rebain](http://drebain.com/)<sup>4,5</sup>,
 [Andrea Tagliasacchi](https://taiya.github.io)<sup>1,5,6</sup>
@@ -23,7 +23,7 @@ Haoran Qin<sup>2\*</sup>,
 
 <sup>\*</sup> Co-first authors
 
-**In submission to the International Conference on 3D Vision (3DV) 2027** &nbsp;&middot;&nbsp; Project page: <https://theialab.github.io/robocloth/>
+Project page: <https://theialab.github.io/robocloth/>
 <!-- PUBLIC-ONLY:END -->
 
 ![Left: the robotic capture rig with one captured frame inset. Right: held-out RoboCloth materials path-traced as the fabrics of a room scene.](assets/teaser.png)
@@ -193,11 +193,10 @@ listed in the
 If you use this code, the dataset or the checkpoints, please cite:
 
 ```bibtex
-@misc{li2027robocloth,
+@misc{li2026robocloth,
   title  = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
   author = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
-  year   = {2027},
-  note   = {In submission to the International Conference on 3D Vision (3DV)}
+  year   = {2026}
 }
 ```
 

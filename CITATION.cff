@@ -13,7 +13,7 @@ authors:
     affiliation: "Westlake University"
   - family-names: "Di Sario"
     given-names: "Francesco"
-    affiliation: "University of Torino"
+    affiliation: "University of Torino and Simon Fraser University"
   - family-names: "Rebain"
     given-names: "Daniel"
     affiliation: "University of British Columbia and Wayve"
@@ -35,7 +35,7 @@ abstract: >-
 url: "https://theialab.github.io/robocloth/"
 repository-code: "https://github.com/theialab/robocloth"
 preferred-citation:
-  type: conference-paper
+  type: generic
   title: "RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction"
   authors:
     - family-names: "Li"
@@ -48,5 +48,4 @@ preferred-citation:
       given-names: "Daniel"
     - family-names: "Tagliasacchi"
       given-names: "Andrea"
-  collection-title: "In submission to the International Conference on 3D Vision (3DV)"
-  year: 2027
+  year: 2026
