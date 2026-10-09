@@ -531,6 +531,33 @@
         cell. Columns are the decoder trained on <b>RoboCloth</b>, <b>UBOFAB19</b> or <b>MERL</b>, the analytic
         <b>PBR</b> fit, and the <b>ground truth</b> where one exists. Click a figure to open it at full resolution.
     </p>
+    <p class="lead-text note res-note">
+        <span class="note-label">How these are produced</span>
+        We compare three Stage&nbsp;1 training sources, all consumed through the same auto-decoder loop:
+        <b>RoboCloth</b> (our real robotic captures), <b>UBOFAB19</b> (fabric SVBRDFs) and <b>MERL</b> (real, measured
+        isotropic BRDFs); as a non-neural reference we fit spatially-varying Disney principled BRDF texture maps with the
+        same renderer and optimizer as Stage&nbsp;2 (<b>PBR</b>). We evaluate the learned material prior in three regimes,
+        varying only the Stage&nbsp;1 training source while holding the decoder, renderer and Stage&nbsp;2 fixed:
+        cross-dataset transfer to an independent capture system (UBO2014), in-domain reconstruction on held-out materials
+        from our own test set, and cross-dataset comparison on held-out UBOFAB19 materials. Fitting a dense latent grid at
+        high resolution takes up to one day of training per material, so we randomly pick a subsample of materials for
+        evaluation: <span data-res="ubo2014.n">12</span> from UBO2014, five from our own held-out test set and five from
+        the UBOFAB19 test set.
+    </p>
+    <p class="lead-text note res-note">
+        For UBO2014 we freeze each pretrained decoder and fit it to the benchmark; because UBO2014 provides sparse
+        per-point ray&ndash;camera observations rather than a continuously parametrized surface, we use the Stage-1-style
+        per-point latent representation together with the per-channel scale &beta;, without the dense latent-geometry grid
+        or the parallax-aware texture lookup. For the held-out materials of our own and the UBOFAB19 test sets we freeze
+        the decoder, optimize a dense latent grid on a subset of captured views, and evaluate on held-out views and
+        lighting. Each recovered material is then relit in a common scene &mdash; the same cloth mesh draped over a bar,
+        with identical UV tiling, lighting and camera for every method &mdash; so any visible difference is due solely to
+        the learned material. In the UBO2014 close-up, each cell insets a magnified crop of the boxed region, taken from
+        the full-resolution render, and the number in each cell is the PSNR (dB) computed on the rendered image against
+        the ground-truth render. No ground-truth render exists for a captured material, so for our own test set we also
+        compare the reconstructions directly against the captured photographs under several views (image-space
+        comparison).
+    </p>
 
     <figure class="res-figure qual-fig qual-wide">
         <a class="res-card qual-card" href="images/results/qual/supp/ubo2014_zoom_3.jpg?v=1" target="_blank" rel="noopener" title="Open at full size">

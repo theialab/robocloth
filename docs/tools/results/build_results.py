@@ -646,7 +646,9 @@ def check(data: dict, tex_dir: str | None) -> bool:
     else:
         print(f"  ok    all {len(nums_in_section)} two-decimal numbers in #main-viz come from the tables")
     rel_names = {r["name"] for r in data["related"]["rows"]}
-    ints = set(re.findall(r"(?<![\w.,])(?:\d{1,3}(?:,\d{3})+|\d+)(?![\w.,])", re.sub(r"<[^>]+>", " ", sec_text)))
+    # figure captions name materials and figure ranges ("materials 1-6"), not results: skip them
+    prose_only = re.sub(r"<figcaption>.*?</figcaption>", " ", sec_text, flags=re.S)
+    ints = set(re.findall(r"(?<![\w.,])(?:\d{1,3}(?:,\d{3})+|\d+)(?![\w.,])", re.sub(r"<[^>]+>", " ", prose_only)))
     allowed_ints = {r["scale"] for r in data["related"]["rows"]} | {r["year"] for r in data["related"]["rows"]} \
         | {str(len(s["rows"])) for s in data["sets"].values()} | {f"{AXIS[0]:.0f}"}
     allowed_ints |= {"1", "2"}          # "Stage 1" / "Stage 2" are names in the prose, not data
