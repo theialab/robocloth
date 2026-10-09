@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RoboCloth — Material Viewer</title>
+    <meta name="description" content="Browse one RoboCloth cloth material: its ≈580 calibrated HDR captures (camera and LED positions shown in 3-D), streamed straight from the Hugging Face dataset.">
+    <!-- Social preview (X / Slack / etc.). Image URLs must be absolute. -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RoboCloth">
+    <meta property="og:title" content="RoboCloth — Material Viewer">
+    <meta property="og:description" content="Browse one of 500 real cloth materials: ≈580 calibrated HDR captures with the camera and LED positions in 3-D, streamed from the Hugging Face dataset.">
+    <meta property="og:url" content="https://theialab.github.io/robocloth/obj.html">
+    <meta property="og:image" content="https://theialab.github.io/robocloth/images/og_card.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="RoboCloth title over a wall of captured cloth materials: 580 views × 500 cloth, 80 billion observations">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="RoboCloth — Material Viewer">
+    <meta name="twitter:description" content="Browse one of 500 real cloth materials: ≈580 calibrated HDR captures with the camera and LED positions in 3-D, streamed from the Hugging Face dataset.">
+    <meta name="twitter:image" content="https://theialab.github.io/robocloth/images/og_card.jpg">
+    <link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png?v=2">
+    <!-- The metadata and the captures come from huggingface.co (resolve ->
+         CDN): open that connection while the page itself loads. -->
+    <link rel="preconnect" href="https://huggingface.co" crossorigin>
+
+    <!-- The first capture (4-14 MB out of hdr.tar) is the long pole of this
+         page, so its download starts here, in parallel with the stylesheets
+         and the other scripts: ask for the material's tar index, then for
+         the archive's first member (js/obj.js joins that download). -->
+    <script src="js/config.js?v=36"></script>
+    <script src="js/tar_reader.js?v=37"></script>
+    <script>
+        (function () {
+            try {
+                var id = parseInt(new URLSearchParams(location.search).get("id") || "0", 10);
+                if (!(id >= 0)) id = 0;
+                var boot = window.__objBoot = { id: id, ctl: new AbortController() };
+                boot.index = fetch(CONFIG.tarIndexURL(id))
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .catch(function () { return null; });
+                boot.proxyIndex = fetch(CONFIG.proxyIndexURL(id))
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .catch(function () { return null; });
+                boot.first = boot.index.then(function (index) {
+                    for (var k in index || {}) {
+                        if (k.indexOf("/") >= 0) continue;
+                        TarReader.fetchFile(CONFIG.hdrTarURL(id), index, k,
+                            { signal: boot.ctl.signal, priority: "high" }).catch(function () {});
+                        return k;
+                    }
+                    return null;
+                }).catch(function () { return null; });
+                // the first capture's small proxy too: it is on screen long before the PNG
+                Promise.all([boot.proxyIndex, boot.first]).then(function (a) {
+                    var idx = a[0], k = a[1] && a[1].replace(/\.png$/, ".webp");
+                    if (!idx || !k || !idx[k]) return;
+                    TarReader.fetchFile(CONFIG.proxyTarURL(id), idx, k,
+                        { signal: boot.ctl.signal, priority: "high" }).catch(function () {});
+                }).catch(function () {});
+            } catch (e) { window.__objBoot = null; }
+        })();
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css">
+    <!-- Type: Jost (as powerfoam.github.io), swapped in over the system sans while it loads. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300..700;1,400..600&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css?v=42">
+    <link rel="stylesheet" href="css/viz3d.css?v=42">
+</head>
+<body>
+
+<div class="material-detail">
+
+    <!-- Header: title + the two counts on the left, the main page's hero pills on the right. -->
+    <header class="detail-header">
+        <div class="title-block">
+            <h1 id="title">Material <span id="material-id">…</span>
+                <span class="split-chip" id="split-chip" hidden></span></h1>
+            <p class="subtitle" id="subtitle">
+                <span class="spinner"></span> Loading metadata…
+            </p>
+        </div>
+        <nav class="detail-nav" aria-label="Material navigation">
+            <a class="hero-btn" href="index.html" title="RoboCloth main page">
+                <span class="hero-ico"><i class="fa-solid fa-house"></i></span>
+                <span class="lbl-long">Main page</span><span class="lbl-short">Home</span></a>
+            <a class="hero-btn" id="btn-hf" target="_blank" rel="noopener"
+               title="This material's folder on Hugging Face (download)">
+                <span class="hero-ico"><i class="fa-solid fa-download"></i></span><span>Download</span></a>
+            <button class="hero-btn" id="btn-prev" title="Previous material">
+                <span class="hero-ico"><i class="fa-solid fa-arrow-left"></i></span><span>Prev</span></button>
+            <button class="hero-btn" id="btn-next" title="Next material">
+                <span>Next</span><span class="hero-ico"><i class="fa-solid fa-arrow-right"></i></span></button>
+        </nav>
+    </header>
+
+    <div class="detail-grid">
+
+        <!-- LEFT — the selected capture + the sliders that pick it -->
+        <div class="left-column">
+            <section class="panel">
+                <h2 class="panel-title">Selected capture</h2>
+                <div class="image-panel">
+                    <div class="image-wrap">
+                        <canvas id="image-canvas"></canvas>
+                    </div>
+                    <div class="image-meta">
+                        <div class="meta-file">
+                            <span class="spinner" id="img-spinner" style="display:none"></span>
+                            <code id="meta-filename">—</code>
+                        </div>
+                        <div class="meta-pose">
+                            <span class="meta-k">camera</span><code id="meta-camera">—</code>
+                            <span class="meta-k">light</span><code id="meta-light">—</code>
+                            <span class="meta-k">turn</span><code id="meta-turn">—</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2 class="panel-title">Pick a capture</h2>
+                <div class="slider-panel">
+                    <div class="slider-group">
+                        <label class="slider-label" for="slider-frame">
+                            <span>Capture index</span>
+                            <span class="value-tag" id="frame-tag">—</span>
+                        </label>
+                        <input type="range" id="slider-frame" min="0" max="0" step="1" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label class="slider-label" for="slider-camera">
+                            <span>Camera trajectory</span>
+                            <span class="value-tag" id="cam-tag">—</span>
+                        </label>
+                        <input type="range" id="slider-camera" min="0" max="0" step="1" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label class="slider-label" for="slider-light">
+                            <span>Light position</span>
+                            <span class="value-tag" id="light-tag">—</span>
+                        </label>
+                        <input type="range" id="slider-light" min="0" max="0" step="1" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <label class="slider-label" for="slider-turn">
+                            <span>Turntable angle</span>
+                            <span class="value-tag" id="turn-tag">—</span>
+                        </label>
+                        <input type="range" id="slider-turn" min="0" max="0" step="1" value="0">
+                    </div>
+
+                    <div class="controls-row">
+                        <button class="btn-pill" id="btn-rand" title="Jump to a random capture">
+                            <i class="fa-solid fa-shuffle"></i> Random
+                        </button>
+                        <button class="btn-pill" id="btn-crop" title="Crop the view to the material">
+                            <i class="fa-solid fa-crop-simple"></i> Crop
+                        </button>
+                        <button class="btn-pill" id="btn-expmore" title="Brighter display exposure">
+                            <i class="fa-solid fa-sun"></i> Brighter
+                        </button>
+                        <button class="btn-pill" id="btn-expless" title="Dimmer display exposure">
+                            <i class="fa-regular fa-sun"></i> Dimmer
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- RIGHT — two scenes, both combine camera + light.
+             Panel 1 expresses everything in the camera-arm base (base1);
+             the light arm's positions are brought in via the calibrated
+             base2_to_base1. No turntable rotation is undone, so this is
+             the physical layout at the moment of each capture.
+             Panel 2 then undoes the turntable rotation around the
+             calibrated turntable centre+axis to produce the world0
+             frame that the trained model actually uses. -->
+        <div class="right-column">
+            <section class="panel">
+                <h2 class="panel-title">Original capture positions</h2>
+                <p class="viz-hint">Drag to orbit &middot; scroll to zoom &middot; double-click to reset</p>
+                <div class="viz-panel is-pending">
+                    <canvas id="viz-base1"></canvas>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2 class="panel-title">Material local frame</h2>
+                <p class="viz-hint">Drag to orbit &middot; scroll to zoom &middot; double-click to reset</p>
+                <div class="viz-panel is-pending">
+                    <canvas id="viz-world0"></canvas>
+                </div>
+                <p class="note">
+                    <span class="note-label">3-D views</span>
+                    The camera (frustum) and the LED (light cone) of the selected capture; the dots
+                    are all capture positions. The first scene is the physical layout at capture
+                    time, the second undoes the turntable rotation into the material's own frame.
+                </p>
+            </section>
+
+            <section class="panel">
+                <h2 class="panel-title">Material info</h2>
+                <div class="info-panel">
+                    <div class="material-info">
+                        <div class="info-row">
+                            <span class="info-label">Sample size</span>
+                            <span class="info-value" id="info-size">—</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Thickness</span>
+                            <span class="info-value" id="info-thickness">—</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Mean colour</span>
+                            <span class="info-value" id="info-color">
+                                <span class="color-swatch" id="color-swatch"></span>
+                                <code id="color-hex">—</code>
+                            </span>
+                        </div>
+
+                        <div class="info-row info-row-block">
+                            <span class="info-label">BRDF value range (per channel)</span>
+
+                            <div class="channel-bar ch-r">
+                                <span class="channel-label">R</span>
+                                <div class="channel-track">
+                                    <div class="channel-fill" id="rfill"></div>
+                                </div>
+                                <span class="channel-range">
+                                    <code id="rmin">—</code><span class="dash">–</span><code id="rmax">—</code>
+                                </span>
+                            </div>
+                            <div class="channel-bar ch-g">
+                                <span class="channel-label">G</span>
+                                <div class="channel-track">
+                                    <div class="channel-fill" id="gfill"></div>
+                                </div>
+                                <span class="channel-range">
+                                    <code id="gmin">—</code><span class="dash">–</span><code id="gmax">—</code>
+                                </span>
+                            </div>
+                            <div class="channel-bar ch-b">
+                                <span class="channel-label">B</span>
+                                <div class="channel-track">
+                                    <div class="channel-fill" id="bfill"></div>
+                                </div>
+                                <span class="channel-range">
+                                    <code id="bmin">—</code><span class="dash">–</span><code id="bmax">—</code>
+                                </span>
+                            </div>
+
+                            <div class="channel-axis">
+                                <span>0</span><span>65 535</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<footer>
+    Streamed from
+    <a href="https://huggingface.co/datasets/koalapenguin/RoboCloth" target="_blank">koalapenguin/RoboCloth</a>
+    via HTTP Range requests · no server.
+</footer>
+
+<!-- Script order matters for the first image: obj.js runs before three.js
+     has even downloaded and starts the remaining requests at once (it joins
+     the first capture's download begun in <head>); it builds the 3-D panels
+     after DOMContentLoaded, i.e. once three.js / OrbitControls / viz.js
+     below have run.
+     Cache-busting query suffixes: bump the number of a file whenever it
+     changes so browsers don't serve a stale copy. -->
+<!-- (config.js and tar_reader.js are loaded in <head>.) -->
+<script src="js/transforms.js?v=35"></script>
+<script src="js/hdr_display.js?v=38"></script>
+<script src="js/swatch_tex.js?v=37"></script>
+<script src="js/obj.js?v=39"></script>
+
+<!-- Presentation only: the filled part of each slider's track (css/style.css
+     paints it from --p). obj.js rewrites #frame-tag on every frame change,
+     so observing it catches programmatic moves as well as the user's drag. -->
+<script>
+    (function () {
+        var sliders = ["slider-frame", "slider-camera", "slider-light", "slider-turn"]
+            .map(function (id) { return document.getElementById(id); });
+        var queued = false;
+        function paint() {
+            queued = false;
+            sliders.forEach(function (s) {
+                var lo = parseFloat(s.min) || 0, hi = parseFloat(s.max), v = parseFloat(s.value);
+                var p = hi > lo ? (v - lo) / (hi - lo) : 0;
+                s.style.setProperty("--p", isFinite(p) ? Math.min(1, Math.max(0, p)) : 0);
+            });
+        }
+        function later() { if (!queued) { queued = true; setTimeout(paint, 0); } }
+        sliders.forEach(function (s) { s.addEventListener("input", later); s.addEventListener("change", later); });
+        var tag = document.getElementById("frame-tag");
+        if (window.MutationObserver && tag)
+            new MutationObserver(later).observe(tag, { childList: true, characterData: true, subtree: true });
+        paint();
+    })();
+</script>
+
+<!-- Three.js + OrbitControls.
+     Pin to r0.140.2 — last version with a working UMD examples/js/controls/
+     build. r0.148+ ships only the ESM (`examples/jsm/`) form which would
+     require import-maps. -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.140.2/examples/js/controls/OrbitControls.js"></script>
+<script src="js/viz.js?v=36"></script>
+
+</body>
+</html>

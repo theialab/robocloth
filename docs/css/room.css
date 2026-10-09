@@ -1,0 +1,420 @@
+/* ============================================================
+ *  "Apply a trained material" room panel (Method section).
+ *  js/room_core.js draws the room; js/room_a.js the drag-a-latent interaction.
+ * ============================================================ */
+
+.room-block { margin: 2.6rem 0 0; }
+.room-title { font-size: 1.25rem; font-weight: 600; line-height: 1.25; text-align: center; margin-bottom: 0.35rem; }   /* sub-heading, as .subsection-title */
+.room-hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 1.05rem;           /* Power Foam's .interactive-controls */
+    margin: 0 1rem 0.9rem;
+    min-height: 1.4em;
+    transition: color 0.3s;
+}
+.room-hint.active { color: var(--accent); }
+.room-hint.nudge, .room-side.nudge { animation: room-nudge 0.5s ease-in-out; }
+@keyframes room-nudge { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+.room-hint .hint-coarse { display: none; }
+@media (pointer: coarse) {
+    .room-hint .hint-fine { display: none; }
+    .room-hint .hint-coarse { display: inline; }
+}
+.room-caption {
+    font-size: 0.95rem;           /* captions, as the Method figures' */
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0.7rem 1rem 0;
+    text-align: center;
+}
+
+.room-panel {
+    --tile: clamp(56px, 6.9vw, 92px);
+    position: relative;
+    display: flex;
+    gap: 14px;
+    align-items: stretch;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(20, 30, 50, 0.04), 0 8px 24px rgba(20, 30, 50, 0.05);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------------- the room ---------------- */
+.room-viewport { position: relative; flex: 1 1 auto; min-width: 0; }
+.room-view {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #ebe7e4;
+}
+.room-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1920 / 900;
+    background: #ebe7e4 center / 100% 100% no-repeat;
+}
+.room-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    opacity: 0;
+    transition: opacity 0.4s;
+    touch-action: pan-x pan-y;
+}
+.room-ready .room-canvas { opacity: 1; }
+
+.room-tag {
+    position: absolute;
+    left: 0; top: 0;
+    transform: translate(-50%, calc(-100% - 16px));
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--brand);
+    font-size: 0.85rem;           /* Power Foam's .interactive-badge */
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 2px 10px rgba(20, 30, 50, 0.16);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.room-tag.show { opacity: 1; }
+.room-tag.soft {                        /* nothing in hand: a quieter label */
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 1px 6px rgba(20, 30, 50, 0.12);
+}
+.room-stage.carrying .room-tag { transform: translate(-50%, calc(-100% - var(--ghost-half, 52px) - 8px)); }
+
+.room-reset {
+    position: absolute;
+    right: 10px; bottom: 10px;
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.28rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--brand);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(20, 30, 50, 0.12);
+    transition: opacity 0.2s, background 0.15s;
+    z-index: 3;
+}
+.room-reset:hover { background: #fff; }
+.room-reset:disabled { opacity: 0; pointer-events: none; }
+
+.room-loading {
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+    pointer-events: none;
+    transition: opacity 0.4s;
+}
+.room-ready .room-loading { opacity: 0; }
+.room-error .room-loading { opacity: 1; }
+
+/* phones: the room is zoomed and pans sideways (swipe, or it glides to the object in use) */
+.room-viewport::before, .room-viewport::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 22px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s;
+    z-index: 2;
+}
+.room-viewport::before { left: 0; border-radius: 6px 0 0 6px; background: linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255,255,255,0)); }
+.room-viewport::after { right: 0; border-radius: 0 6px 6px 0; background: linear-gradient(270deg, rgba(255,255,255,0.85), rgba(255,255,255,0)); }
+
+@media (max-width: 1124px) {
+    .room-block { margin-left: 12px; margin-right: 12px; }
+}
+
+@media (max-width: 600px) {
+    .room-block { margin: 2rem 12px 0; }
+    .room-panel { flex-direction: column; gap: 8px; padding: 8px; }
+    .room-view {
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .room-view::-webkit-scrollbar { display: none; }
+    .room-stage { width: 150%; }
+    .room-more-left .room-viewport::before { opacity: 1; }
+    .room-more-right .room-viewport::after { opacity: 1; }
+    .room-reset { right: 8px; bottom: 8px; }
+}
+
+/* ============================================================
+ *  Variant A: drag a latent, it decodes in your hand
+ * ============================================================ */
+/* six materials: the tiles form a row above the room (all widths), so the room keeps the
+   full card width */
+.room-a { flex-direction: column; gap: 12px; }
+.room-a .room-side {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+.room-tile {
+    position: relative;
+    width: var(--tile);
+    height: var(--tile);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    background: #e9ecf1;
+    box-shadow: 0 1px 3px rgba(20, 30, 50, 0.18);
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+    outline: none;
+}
+.room-tile canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.room-tile:hover { transform: translateY(-3px); box-shadow: 0 7px 16px rgba(20, 30, 50, 0.24); }
+.room-tile:active, .room-tile.lifted, .room-tile.dragging { cursor: grabbing; }
+.room-tile:focus-visible { box-shadow: 0 0 0 3px var(--accent); }
+.room-tile.lifted { opacity: 0.35; transform: scale(0.96); }
+.room-tile.selected { box-shadow: 0 0 0 3px var(--accent), 0 4px 14px rgba(51, 103, 214, 0.3); }
+.room-a.has-selection .room-tile:not(.selected) { opacity: 0.6; }
+.room-tile .tile-tag {
+    position: absolute;
+    left: 5px; bottom: 5px;
+    padding: 0.05rem 0.42rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    color: var(--brand);
+    font-size: 0.72rem;
+    font-weight: 600;
+    pointer-events: none;
+}
+.room-tile .tile-state {
+    position: absolute;
+    right: 6px; top: 5px;
+    padding: 0.05rem 0.42rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    color: var(--muted);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 0.2s;
+}
+.room-tile.selected .tile-state { color: var(--accent); }
+.room-a .room-stage.picking .room-canvas { cursor: pointer; }
+
+.room-ghost {
+    position: fixed;
+    left: 0; top: 0;
+    width: var(--ghost, 104px);
+    height: var(--ghost, 104px);
+    border-radius: 8px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    box-shadow: 0 10px 28px rgba(20, 30, 50, 0.32);
+    will-change: transform, opacity;
+}
+.room-ghost canvas { width: 100%; height: 100%; display: block; }
+.room-ghost.over { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.95), 0 10px 28px rgba(20, 30, 50, 0.32); }
+
+/* ghost demo: a pointer (or, on phones, a fingertip) that shows the gesture */
+.room-demo-hand {
+    position: fixed;
+    left: 0; top: 0;
+    z-index: 1001;
+    pointer-events: none;
+    opacity: 0;
+    transform-origin: 3px 2px;
+    margin: -2px 0 0 -3px;                 /* the arrow tip is the hot spot */
+    filter: drop-shadow(0 4px 7px rgba(20, 30, 50, 0.28));
+    will-change: transform, opacity;
+}
+.room-demo-hand svg { display: block; }
+.room-demo-hand .press {                   /* a soft ring at the tip while the button is held */
+    position: absolute;
+    left: -9px; top: -9px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid rgba(51, 103, 214, 0.55);
+    background: rgba(51, 103, 214, 0.12);
+    opacity: var(--press, 0);
+    transform: scale(calc(0.6 + 0.4 * var(--press, 0)));
+}
+.room-demo-hand.finger {
+    width: 38px; height: 38px;
+    margin: -19px 0 0 -19px;
+    transform-origin: 50% 50%;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    border: 2px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 1px rgba(51, 103, 214, 0.35);
+    filter: drop-shadow(0 4px 8px rgba(20, 30, 50, 0.3));
+}
+.room-demo-tap {
+    position: fixed;
+    left: 0; top: 0;
+    width: 46px; height: 46px;
+    margin: -23px 0 0 -23px;
+    border-radius: 50%;
+    border: 2px solid rgba(51, 103, 214, 0.7);
+    background: rgba(51, 103, 214, 0.16);
+    z-index: 1001;
+    pointer-events: none;
+    opacity: 0;
+}
+
+/* the hint that pulses next to the tiles after a demo run */
+.room-callout {
+    position: absolute;
+    left: 0; top: 0;
+    z-index: 5;
+    transform: translate(0, -50%) scale(var(--s, 1));
+    transform-origin: left center;
+    padding: 0.42rem 0.85rem;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 4px 16px rgba(20, 30, 50, 0.16);
+}
+.room-callout::before {                    /* caret towards the tiles */
+    content: "";
+    position: absolute;
+    left: -5px; top: 50%;
+    width: 10px; height: 10px;
+    margin-top: -5px;
+    background: #fff;
+    transform: rotate(45deg);
+}
+.room-callout.below { transform: translate(-50%, 0) scale(var(--s, 1)); transform-origin: center top; }
+.room-callout.below::before { left: 50%; top: -5px; margin: 0 0 0 -5px; }
+.room-callout .co-coarse { display: none; }
+@media (pointer: coarse) {
+    .room-callout .co-fine { display: none; }
+    .room-callout .co-coarse { display: inline; }
+}
+
+@media (max-width: 600px) {
+    .room-callout { font-size: 0.85rem; }
+    .room-a { gap: 8px; }
+    /* ten tiles: two rows of five (every material stays in sight, ~66 px touch targets) */
+    .room-a .room-side {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 66px));
+        justify-content: center;
+        gap: 6px 8px;
+    }
+    .room-a .room-tile { width: 100%; height: auto; aspect-ratio: 1; border-radius: 6px; }
+    .room-tile .tile-tag { left: 4px; bottom: 4px; font-size: 0.68rem; }
+    .room-tile .tile-state { display: none; }
+}
+
+/* ============================================================
+ *  Call to action: a pill on the panel's top edge, until the visitor's first interaction
+ * ============================================================ */
+.room-panel.has-cta { margin-top: 20px; padding-top: 24px; }   /* room for the pill's lower half */
+.room-cta {
+    position: absolute;
+    left: 50%; top: 0;
+    z-index: 6;
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.32rem 0.95rem 0.32rem 0.72rem;
+    border-radius: 999px;
+    border: 1px solid rgba(51, 103, 214, 0.28);
+    background: #fff;
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 10px rgba(20, 30, 50, 0.10);
+    transition: opacity 0.45s, transform 0.45s, background-color 0.35s, color 0.35s, border-color 0.35s;
+    animation: room-cta-pulse 2.6s ease-in-out infinite;
+}
+.room-cta svg { flex: 0 0 auto; }
+.room-cta .cta-coarse { display: none; }
+@media (pointer: coarse) {
+    .room-cta .cta-fine { display: none; }
+    .room-cta .cta-coarse { display: inline; }
+}
+.room-cta.turn {                        /* "your turn" beat at the end of each demo cycle */
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    transform: translate(-50%, -50%) scale(1.05);
+}
+.room-cta.gone { opacity: 0; transform: translate(-50%, -50%) scale(0.96); animation: none; }
+@keyframes room-cta-pulse {
+    0%, 100% { box-shadow: 0 2px 10px rgba(20, 30, 50, 0.10), 0 0 0 0 rgba(51, 103, 214, 0.28); }
+    50% { box-shadow: 0 2px 10px rgba(20, 30, 50, 0.10), 0 0 0 7px rgba(51, 103, 214, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .room-cta { animation: none; } }
+@media (max-width: 600px) {
+    .room-panel.has-cta { margin-top: 18px; padding-top: 20px; }
+    .room-cta { font-size: 0.72rem; padding: 0.28rem 0.75rem 0.28rem 0.6rem; gap: 0.35rem; }
+}
+
+/* the hand mark (top-right of the room): "you can touch this" */
+.room-viewport { position: relative; }
+.room-hand { display: none; }
+.room-side { position: relative; }
+.room-side::after {                       /* the hand mark sits on the material tiles */
+    content: "";
+    position: absolute;
+    top: -4px;
+    right: -2px;
+    width: 26px;
+    height: 26px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 width=%2726%27 height=%2726%27><path d=%27M9 11.2V5.4a1.6 1.6 0 0 1 3.2 0v5.2M12.2 10.6V8.4a1.6 1.6 0 0 1 3.2 0v2.6M15.4 11.4v-1a1.6 1.6 0 0 1 3.2 0v5.2c0 3.6-2.4 6-6 6h-1.4c-1.9 0-3.3-.7-4.4-2.1L4 15.5a1.5 1.5 0 0 1 2.3-1.9L9 16.2%27 fill=%27none%27 stroke=%27%232b2f36%27 stroke-width=%271.6%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/></svg>") no-repeat center / contain;
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 6;
+    filter: drop-shadow(0 1px 1px rgba(255,255,255,0.9));
+}
+@media (max-width: 576px) { .room-side::after { display: none; } }
+.room-hand-old {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    color: #2b2f36;
+    opacity: 0.75;
+    pointer-events: none;
+    z-index: 5;
+    filter: drop-shadow(0 1px 1px rgba(255,255,255,0.8));
+}
+.room-caption.room-note { text-align: left; }
+
+/* phones: nothing of the panel may widen the page (the callout bubble and the pan stage) */
+@media (max-width: 576px) {
+    .room-block { overflow-x: clip; }
+    .room-callout { max-width: calc(100vw - 2rem); white-space: normal; text-align: center; box-sizing: border-box; }
+}

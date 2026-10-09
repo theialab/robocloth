@@ -1,0 +1,97 @@
+{
+ "src": "robocloth_method.mp4",
+ "width": 1920,
+ "height": 1080,
+ "fps": 30,
+ "frames": 904,
+ "duration": 30.1333,
+ "last_frame": {
+  "index": 903,
+  "t": 30.1,
+  "hold_s": 2.39
+ },
+ "cut": "method_light_v5_silent.mp4, frames 0-903 (0 .. 30.1 s; the flat 5x2 grid of 10 latent tiles (the room's) is complete from 27.71 s and holds to the end)",
+ "coords": "pixel rectangles (x, y = top-left corner) in width x height frame px",
+ "tiles": [
+  {
+   "id": 453,
+   "x": 272.0,
+   "y": 208.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  },
+  {
+   "id": 8,
+   "x": 556.0,
+   "y": 208.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  },
+  {
+   "id": 145,
+   "x": 840.0,
+   "y": 208.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  },
+  {
+   "id": 226,
+   "x": 1124.0,
+   "y": 208.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  },
+  {
+   "id": 9,
+   "x": 1408.0,
+   "y": 208.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  },
+  {
+   "id": 50,
+   "x": 272.0,
+   "y": 492.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  },
+  {
+   "id": 367,
+   "x": 556.0,
+   "y": 492.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  },
+  {
+   "id": 311,
+   "x": 840.0,
+   "y": 492.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  },
+  {
+   "id": 314,
+   "x": 1124.0,
+   "y": 492.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  },
+  {
+   "id": 370,
+   "x": 1408.0,
+   "y": 492.0,
+   "w": 240.0,
+   "h": 240.0,
+   "room": true
+  }
+ ]
+}

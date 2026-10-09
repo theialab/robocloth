@@ -1,0 +1,578 @@
+{
+ "generated_by": "docs/tools/results/build_results.py",
+ "note": "Parsed from the paper's tables/ours.tex, tables/ubo.tex and tables/related.tex; do not edit by hand.",
+ "sources_sha256": {
+  "ours.tex": "fb2de7f05b2ba86bc3e248692bc1e1953fca1696acb2c13a381ee0143423d5b1",
+  "ubo.tex": "536140c9b05d42ba45093b5e635e2ebb46c85a83ee76df32bdc840b659374e63",
+  "related.tex": "78e49f4c0f41d38b776838b6841baf4b1b36ca639e71080442da19f2810b0bd8"
+ },
+ "columns": [
+  "RoboCloth",
+  "Bonn",
+  "MERL",
+  "PBR"
+ ],
+ "sets": {
+  "robocloth": {
+   "rows": [
+    {
+     "material": "226",
+     "cells": [
+      "29.24",
+      "25.63",
+      "24.24",
+      "25.35"
+     ],
+     "marks": [
+      "best",
+      "second",
+      "",
+      ""
+     ],
+     "delta": "+3.61"
+    },
+    {
+     "material": "314",
+     "cells": [
+      "26.60",
+      "24.42",
+      "22.93",
+      "23.98"
+     ],
+     "marks": [
+      "best",
+      "second",
+      "",
+      ""
+     ],
+     "delta": "+2.18"
+    },
+    {
+     "material": "370",
+     "cells": [
+      "29.71",
+      "29.21",
+      "27.75",
+      "29.29"
+     ],
+     "marks": [
+      "best",
+      "",
+      "",
+      "second"
+     ],
+     "delta": "+0.42"
+    },
+    {
+     "material": "145",
+     "cells": [
+      "28.44",
+      "24.45",
+      "23.39",
+      "24.28"
+     ],
+     "marks": [
+      "best",
+      "second",
+      "",
+      ""
+     ],
+     "delta": "+3.99"
+    },
+    {
+     "material": "452",
+     "cells": [
+      "34.15",
+      "32.91",
+      "30.89",
+      "32.06"
+     ],
+     "marks": [
+      "best",
+      "second",
+      "",
+      ""
+     ],
+     "delta": "+1.24"
+    }
+   ],
+   "average": {
+    "material": "Average",
+    "cells": [
+     "29.63",
+     "27.32",
+     "25.84",
+     "26.99"
+    ],
+    "marks": [
+     "best",
+     "second",
+     "",
+     ""
+    ],
+    "delta": "+2.31"
+   },
+   "source": "ours.tex",
+   "tex_title": "In-domain: RoboCloth test set (held-out)"
+  },
+  "ubo2014": {
+   "rows": [
+    {
+     "material": "Fabric02",
+     "cells": [
+      "34.57",
+      "28.56",
+      "27.88",
+      "30.96"
+     ],
+     "marks": [
+      "best",
+      "",
+      "",
+      "second"
+     ],
+     "delta": "+3.61"
+    },
+    {
+     "material": "Fabric04",
+     "cells": [
+      "34.00",
+      "28.50",
+      "26.66",
+      "30.09"
+     ],
+     "marks": [
+      "best",
+      "",
+      "",
+      "second"
+     ],
+     "delta": "+3.91"
+    },
+    {
+     "material": "Fabric09",
+     "cells": [
+      "39.50",
+      "36.08",
+      "33.96",
+      "36.96"
+     ],
+     "marks": [
+      "best",
+      "",
+      "",
+      "second"
+     ],
+     "delta": "+2.54"
+    },
+    {
+     "material": "Fabric11",
+     "cells": [
+      "34.33",
+      "29.45",
+      "27.46",
+      "31.24"
+     ],
+     "marks": [
+      "best",
+      "",
+      "",
+      "second"
+     ],
+     "delta": "+3.09"
+    },
+    {
+     "material": "Felt01",
+     "cells": [
+      "38.76",
+      "33.60",
+      "32.81",
+      "35.05"
+     ],
+     "marks": [
+      "best",
+      "",
+      "",
+      "second"
+     ],
+     "delta": "+3.71"
+    },
+    {
+     "material": "Felt03",
+     "cells": [
+      "40.30",
+      "34.20",
+      "33.27",
+      "36.66"
+     ],
+     "marks": [
+      "best",
+      "",
+      "",
+      "second"
+     ],
+     "delta": "+3.64"
+    },
+    {
+     "material": "Felt05",
+     "cells": [
+      "35.39",
+      "32.13",
+      "30.32",
+      "32.63"
+     ],
+     "marks": [
+      "best",
+      "",
+      "",
+      "second"
+     ],
+     "delta": "+2.76"
+    },
+    {
+     "material": "Felt10",
+     "cells": [
+      "44.36",
+      "38.52",
+      "36.38",
+      "41.10"
+     ],
+     "marks": [
+      "best",
+      "",
+      "",
+      "second"
+     ],
+     "delta": "+3.26"
+    },
+    {
+     "material": "Carpet02",
+     "cells": [
+      "38.87",
+      "34.82",
+      "32.56",
+      "33.75"
+     ],
+     "marks": [
+      "best",
+      "second",
+      "",
+      ""
+     ],
+     "delta": "+4.05"
+    },
+    {
+     "material": "Carpet07",
+     "cells": [
+      "34.61",
+      "30.17",
+      "28.85",
+      "29.48"
+     ],
+     "marks": [
+      "best",
+      "second",
+      "",
+      ""
+     ],
+     "delta": "+4.44"
+    },
+    {
+     "material": "Carpet09",
+     "cells": [
+      "33.17",
+      "31.23",
+      "29.42",
+      "29.97"
+     ],
+     "marks": [
+      "best",
+      "second",
+      "",
+      ""
+     ],
+     "delta": "+1.94"
+    },
+    {
+     "material": "Carpet12",
+     "cells": [
+      "33.25",
+      "29.93",
+      "28.13",
+      "28.70"
+     ],
+     "marks": [
+      "best",
+      "second",
+      "",
+      ""
+     ],
+     "delta": "+3.32"
+    }
+   ],
+   "average": {
+    "material": "Average",
+    "cells": [
+     "36.76",
+     "32.27",
+     "30.64",
+     "33.05"
+    ],
+    "marks": [
+     "best",
+     "",
+     "",
+     "second"
+    ],
+    "delta": "+3.71"
+   },
+   "source": "ubo.tex",
+   "tex_title": null
+  },
+  "bonn": {
+   "rows": [
+    {
+     "material": "318",
+     "cells": [
+      "44.38",
+      "45.83",
+      "40.26",
+      "43.16"
+     ],
+     "marks": [
+      "second",
+      "best",
+      "",
+      ""
+     ],
+     "delta": "-1.45"
+    },
+    {
+     "material": "377",
+     "cells": [
+      "16.29",
+      "16.78",
+      "15.57",
+      "15.93"
+     ],
+     "marks": [
+      "second",
+      "best",
+      "",
+      ""
+     ],
+     "delta": "-0.49"
+    },
+    {
+     "material": "32",
+     "cells": [
+      "15.31",
+      "16.42",
+      "14.18",
+      "15.17"
+     ],
+     "marks": [
+      "second",
+      "best",
+      "",
+      ""
+     ],
+     "delta": "-1.11"
+    },
+    {
+     "material": "226",
+     "cells": [
+      "24.14",
+      "25.09",
+      "22.46",
+      "23.92"
+     ],
+     "marks": [
+      "second",
+      "best",
+      "",
+      ""
+     ],
+     "delta": "-0.95"
+    },
+    {
+     "material": "37",
+     "cells": [
+      "17.03",
+      "18.22",
+      "16.36",
+      "16.75"
+     ],
+     "marks": [
+      "second",
+      "best",
+      "",
+      ""
+     ],
+     "delta": "-1.19"
+    }
+   ],
+   "average": {
+    "material": "Average",
+    "cells": [
+     "23.43",
+     "24.47",
+     "21.77",
+     "22.99"
+    ],
+    "marks": [
+     "second",
+     "best",
+     "",
+     ""
+    ],
+    "delta": "-1.04"
+   },
+   "source": "ours.tex",
+   "tex_title": "Cross-domain: Bonn test set (held-out)"
+  }
+ },
+ "related": {
+  "columns": [
+   "Publication Year",
+   "Dataset Scale",
+   "Cloth Specific",
+   "Real World",
+   "Spatially Varying",
+   "Multiple Views",
+   "Flexible Coverage"
+  ],
+  "rows": [
+   {
+    "name": "MERL",
+    "cite": "matusik2003data",
+    "year": "2003",
+    "scale": "100",
+    "flags": [
+     false,
+     true,
+     false,
+     true,
+     false
+    ]
+   },
+   {
+    "name": "UTIA",
+    "cite": "jiri2014template",
+    "year": "2014",
+    "scale": "150",
+    "flags": [
+     false,
+     true,
+     false,
+     true,
+     false
+    ]
+   },
+   {
+    "name": "UBO2014",
+    "cite": "weinmann2014material",
+    "year": "2014",
+    "scale": "84",
+    "flags": [
+     false,
+     true,
+     true,
+     true,
+     false
+    ]
+   },
+   {
+    "name": "UBOFAB19",
+    "cite": "merzbach2019learned",
+    "year": "2019",
+    "scale": "378",
+    "flags": [
+     true,
+     true,
+     true,
+     true,
+     false
+    ]
+   },
+   {
+    "name": "Real-SVBRDF",
+    "cite": "asselin2020deep",
+    "year": "2020",
+    "scale": "80",
+    "flags": [
+     false,
+     true,
+     true,
+     false,
+     false
+    ]
+   },
+   {
+    "name": "PhotoMat",
+    "cite": "zhou2023photomat",
+    "year": "2023",
+    "scale": "12,000",
+    "flags": [
+     false,
+     true,
+     true,
+     false,
+     false
+    ]
+   },
+   {
+    "name": "UMat",
+    "cite": "rodriguez2023umat",
+    "year": "2023",
+    "scale": "2,000",
+    "flags": [
+     true,
+     true,
+     true,
+     false,
+     false
+    ]
+   },
+   {
+    "name": "OpenSVBRDF",
+    "cite": "ma2023opensvbrdf",
+    "year": "2023",
+    "scale": "1,000",
+    "flags": [
+     false,
+     true,
+     true,
+     false,
+     false
+    ]
+   },
+   {
+    "name": "MatSynth",
+    "cite": "vecchio2024matsynth",
+    "year": "2024",
+    "scale": "4,069",
+    "flags": [
+     false,
+     false,
+     true,
+     false,
+     false
+    ]
+   },
+   {
+    "name": "RoboCloth",
+    "cite": null,
+    "year": "--",
+    "scale": "500",
+    "flags": [
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   }
+  ]
+ }
+}

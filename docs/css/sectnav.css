@@ -1,0 +1,200 @@
+/* ============================================================
+ *  Section navigator (js/sectnav.js), after powerfoam.github.io:
+ *  a column of dots on the right edge of wide screens; the current
+ *  section's dot is highlighted and labelled, the others show their
+ *  label while the pointer is over the column. Plus a round
+ *  "back to top" button on all widths.
+ *  Colours, pills and type follow style.css (:root variables).
+ * ============================================================ */
+
+.sectnav {
+    --sn-edge: 14px;            /* window edge -> dot column */
+    --sn-hit: 22px;             /* clickable box around each dot */
+    --sn-row: 26px;             /* row pitch */
+    --sn-gap: 4px;              /* dot box -> label */
+    position: fixed;
+    top: 50%;
+    right: var(--sn-edge);
+    z-index: 40;                /* over the page, under the room's drag ghost (z-index 1000) */
+    transform: translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+/* shown once the reader is past the hero (js), or while a link has keyboard focus */
+.sectnav.is-shown,
+.sectnav:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+}
+/* no room beside the content column (js) or a narrow window: no column at all */
+.sectnav[data-mode="off"] { display: none; }
+@media (max-width: 1099.98px) {
+    .sectnav { display: none; }
+}
+
+.sectnav ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sectnav-link {
+    position: relative;
+    display: flex;
+    flex-direction: row-reverse;    /* dot at the right edge, label to its left */
+    align-items: center;
+    gap: var(--sn-gap);
+    height: var(--sn-row);
+    color: var(--muted, #6e7884);
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.sectnav-link:hover,
+.sectnav-link:focus {
+    color: var(--muted, #6e7884);
+    text-decoration: none;
+    outline: none;
+}
+
+.sectnav-dot {
+    flex: 0 0 var(--sn-hit);
+    height: var(--sn-hit);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+.sectnav-dot::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(110, 120, 132, 0.42);      /* --muted at 42 % */
+    transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.sectnav-link:hover .sectnav-dot::before {
+    background: var(--muted, #6e7884);
+    transform: scale(1.2);
+}
+.sectnav-link[aria-current] .sectnav-dot::before {
+    background: var(--accent, #3367d6);
+    transform: scale(1.35);
+    box-shadow: 0 0 0 4px var(--accent-soft, #e8efff);
+}
+.sectnav-link:focus-visible .sectnav-dot {
+    box-shadow: 0 0 0 2px var(--accent, #3367d6);
+}
+
+.sectnav-label {
+    padding: 0.12rem 0.6rem;
+    border: 1px solid var(--border, #e6e9ee);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 1px 3px rgba(20, 30, 50, 0.07);
+    color: #5b646f;                             /* a shade under --muted: 6:1 on white */
+    font-size: 0.78rem;                         /* Power Foam's .side-toc labels */
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(6px);
+    transition: opacity 0.18s ease, transform 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.sectnav-link[aria-current] .sectnav-label {
+    color: var(--accent, #3367d6);
+    border-color: #cbd9f6;
+}
+
+/* Labels (full mode = the widest label fits beside the content column): the current one
+   always, all of them while the column is hovered or holds keyboard focus. */
+.sectnav[data-mode="full"] .sectnav-link[aria-current] .sectnav-label,
+.sectnav[data-mode="full"]:hover .sectnav-label,
+.sectnav[data-mode="full"]:focus-within .sectnav-label,
+.sectnav-link:hover .sectnav-label,
+.sectnav-link:focus-visible .sectnav-label {
+    opacity: 1;
+    transform: none;
+}
+
+/* Compact mode (dots only): no room for labels beside the content, so a label shows only as a
+   tooltip for the hovered / focused dot and never takes clicks meant for the page below it. */
+.sectnav[data-mode="compact"] .sectnav-label {
+    position: absolute;
+    top: 50%;
+    right: calc(var(--sn-hit) + var(--sn-gap));
+    transform: translate(6px, -50%);
+    box-shadow: 0 2px 8px rgba(20, 30, 50, 0.14);
+    pointer-events: none;
+}
+.sectnav[data-mode="compact"] .sectnav-link:hover .sectnav-label,
+.sectnav[data-mode="compact"] .sectnav-link:focus-visible .sectnav-label {
+    transform: translate(0, -50%);
+}
+
+/* Where a nav click lands: a little air above nested targets (sections bring their own
+   top padding); no focus ring on a section that receives focus from a keyboard jump. */
+.sectnav-target { scroll-margin-top: 24px; }
+section.sectnav-target { scroll-margin-top: 0; }
+.sectnav-focus:focus { outline: none; }
+
+/* --------  Back to top  -------- */
+
+.sectnav-top {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid var(--border, #e6e9ee);
+    border-radius: 50%;
+    background: var(--panel, #ffffff);
+    color: var(--brand, #2b2b2b);
+    box-shadow: 0 4px 14px rgba(20, 30, 50, 0.12);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;                         /* not focusable while hidden */
+    transform: translateY(8px);
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s linear 0.25s,
+                background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.sectnav-top.is-shown {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition-delay: 0s;
+}
+.sectnav-top:hover {
+    background: var(--accent, #3367d6);
+    border-color: var(--accent, #3367d6);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(51, 103, 214, 0.28);
+}
+.sectnav-top:focus { outline: none; }
+.sectnav-top:focus-visible {
+    outline: 2px solid var(--accent, #3367d6);
+    outline-offset: 3px;
+}
+.sectnav-top svg { display: block; }
+
+@media (max-width: 576px) {
+    .sectnav-top { right: 14px; bottom: 14px; width: 40px; height: 40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sectnav, .sectnav *, .sectnav *::before, .sectnav-top { transition: none !important; }
+}
+
+@media (forced-colors: active) {
+    .sectnav-dot::before { background: CanvasText; }
+    .sectnav-link[aria-current] .sectnav-dot::before { background: Highlight; }
+}
+
+@media print {
+    .sectnav, .sectnav-top { display: none !important; }
+}

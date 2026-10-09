@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction</title>
+    <meta name="description" content="RoboCloth: 500 real cloth materials, each captured in ≈580 calibrated HDR frames by two robot arms (camera and LED light) around a turntable — ≈80 billion RGB observations — plus a two-stage neural BRDF reconstruction pipeline. Released under CC BY 4.0.">
+    <link rel="canonical" href="https://theialab.github.io/robocloth/">
+
+    <!-- Social preview (X / Slack / etc.). Image URLs must be absolute. -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RoboCloth">
+    <meta property="og:title" content="RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction">
+    <meta property="og:description" content="500 real cloth materials × ≈580 calibrated HDR frames each, captured by two robot arms — ≈80 billion RGB observations — with a two-stage neural BRDF reconstruction pipeline.">
+    <meta property="og:url" content="https://theialab.github.io/robocloth/">
+    <meta property="og:image" content="https://theialab.github.io/robocloth/images/og_card.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="RoboCloth title over a wall of captured cloth materials: 580 views × 500 cloth, 80 billion observations">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction">
+    <meta name="twitter:description" content="500 real cloth materials × ≈580 calibrated HDR frames each, captured by two robot arms — ≈80 billion RGB observations — with a two-stage neural BRDF reconstruction pipeline.">
+    <meta name="twitter:image" content="https://theialab.github.io/robocloth/images/og_card.jpg">
+    <meta name="twitter:image:alt" content="RoboCloth title over a wall of captured cloth materials: 580 views × 500 cloth, 80 billion observations">
+
+    <link rel="icon" type="image/png" sizes="64x64" href="images/favicon.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png?v=2">
+
+    <script>
+        // Maintainer: put the arXiv URL here once the paper is public, e.g.
+        //   var PAPER_URL = "https://arxiv.org/abs/27xx.xxxxx";
+        // While it is empty the "Paper" button stays hidden; it appears automatically once set.
+        var PAPER_URL = "";
+        var ARXIV_URL = "";       // e.g. "https://arxiv.org/abs/27xx.xxxxx"; the pills stay dimmed while empty
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css">
+    <!-- Type: Jost (as powerfoam.github.io), swapped in over the system sans while it loads. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,300..700;1,400..600&display=swap">
+    <link rel="stylesheet" href="css/sectnav.css?v=2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+    <link rel="stylesheet" href="css/room.css?v=9">
+    <link rel="stylesheet" href="css/style.css?v=43">
+    <link rel="stylesheet" href="css/title_anim.css?v=3">
+    <link rel="stylesheet" href="css/hero_curtain.css?v=1">
+    <link rel="stylesheet" href="css/results.css?v=5">
+</head>
+<body>
+
+<!-- ============================  HERO  ============================ -->
+<!-- The title is rendered for this light header: the fabric letters cast real shadows on it
+     (media/title/, theme "light"). The dark curtain variants stay available for reference:
+     data-curtain="band" | "wall" | "dark" (css/hero_curtain.css, with the dark renders in
+     media/title/dark/ via data-src). -->
+<section id="hero">
+    <div class="jumbotron text-center mt-0 has-title-anim">
+        <div class="container">
+            <!-- The title "RoboCloth" is pieced from real fabric patches (rendered, see
+                 media/title/title.json); js/title_anim.js plays the assembly + light sweep
+                 once and then lets the pointer move the lamp. The <img> is the static state. -->
+            <h2><span class="title-anim" id="title-anim" data-src="media/title/" data-v="4" data-theme="light"><img
+                    class="title-lit" src="media/title/lit.webp?v=4" srcset="media/title/lit.webp?v=4 1x, media/title/lit_2x.webp?v=4 2x" alt="RoboCloth" width="1120" height="187"
+                    fetchpriority="high"></span><script>
+                if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches))
+                    document.getElementById("title-anim").classList.add("ta-pending");
+            </script>A Large-Scale Real Cloth Material Dataset<br class="br-wide"> for Neural Reflectance Reconstruction</h2>
+
+            <p class="author-list">
+                <a href="https://colinzhenli.github.io" target="_blank" rel="noopener">Zhen (Colin) Li</a><sup>1*</sup>,
+                <a href="https://peppasaur.github.io/" target="_blank" rel="noopener">Haoran Qin</a><sup>2*</sup>,
+                <a href="https://scholar.google.com/citations?user=wjOMl_8AAAAJ" target="_blank" rel="noopener">Francesco Di Sario</a><sup>3,1</sup>,
+                <a href="http://drebain.com/" target="_blank" rel="noopener">Daniel Rebain</a><sup>4,5</sup>,
+                <a href="https://taiya.github.io" target="_blank" rel="noopener">Andrea Tagliasacchi</a><sup>1,5,6</sup>
+                <br>
+                <span class="affiliations">
+                    <span class="aff"><sup>1</sup>&nbsp;Simon Fraser University</span> &nbsp;&nbsp;
+                    <span class="aff"><sup>2</sup>&nbsp;Westlake University</span> &nbsp;&nbsp;
+                    <span class="aff"><sup>3</sup>&nbsp;University of Torino</span> &nbsp;&nbsp;
+                    <span class="aff"><sup>4</sup>&nbsp;University of British Columbia</span> &nbsp;&nbsp;
+                    <span class="aff"><sup>5</sup>&nbsp;Wayve</span> &nbsp;&nbsp;
+                    <span class="aff"><sup>6</sup>&nbsp;University of Toronto</span>
+                </span>
+                <br>
+                <span class="footnote">* Co-first authors</span>
+            </p>
+
+            <div class="hero-links">
+                <!-- arXiv / Paper: dimmed until ARXIV_URL / PAPER_URL (top of <head>) are set. -->
+                <a class="hero-btn" id="arxiv-btn" href="#" target="_blank" rel="noopener"><span class="hero-ico"><i class="ai ai-arxiv"></i></span><span>arXiv</span></a>
+                <a class="hero-btn" id="paper-btn" href="#" target="_blank" rel="noopener"><span class="hero-ico"><i class="fa-solid fa-file-pdf"></i></span><span>Paper</span></a>
+                <a class="hero-btn" href="https://github.com/theialab/robocloth" target="_blank" rel="noopener"><span class="hero-ico"><i class="fa-brands fa-github"></i></span><span>Code</span></a>
+                <a class="hero-btn" href="https://huggingface.co/datasets/koalapenguin/RoboCloth" target="_blank" rel="noopener"><span class="hero-ico"><i class="fa-solid fa-database"></i></span><span>Dataset</span></a>
+            </div>
+            <script>
+                (function () {
+                    [["arxiv-btn", window.ARXIV_URL], ["paper-btn", window.PAPER_URL]].forEach(function (x) {
+                        var b = document.getElementById(x[0]);
+                        if (!b) return;
+                        if (x[1]) { b.href = x[1]; }
+                        else { b.classList.add("pending"); b.setAttribute("aria-disabled", "true"); b.title = "Coming soon"; b.removeAttribute("target"); }
+                    });
+                })();
+            </script>
+        </div>
+    </div>
+</section>
+
+<script src="js/title_anim.js?v=3" defer></script>
+
+<!-- ============================  LAUNCH (TEASER) VIDEO  ============================ -->
+<!-- Web encode of the ~20 s launch video (docs/media/, see README "Media").
+     Autoplays muted; the "Sound on" pill unmutes (js/media.js). -->
+<section id="teaser-video" class="launch-section">
+    <div class="launch-video-wrap">
+        <video id="launch-video" autoplay muted loop playsinline controls preload="auto"
+               poster="media/robocloth_teaser_poster.jpg" width="1920" height="1080"
+               data-src-hd="media/robocloth_teaser.mp4" data-src-sd="media/robocloth_teaser_720.mp4">
+            <noscript><source src="media/robocloth_teaser.mp4" type="video/mp4"></noscript>
+            <track kind="subtitles" src="media/robocloth_teaser.vtt" srclang="en" label="English" default>
+            Your browser does not support the video tag.
+        </video>
+        <script>
+          // Pick the 720p encode (about half the bytes) on phones / data-saver, 1080p elsewhere.
+          (function () {
+            var v = document.getElementById('launch-video');
+            var c = navigator.connection || {};
+            var small = window.matchMedia('(max-width: 700px)').matches || c.saveData === true;
+            v.src = small ? v.getAttribute('data-src-sd') : v.getAttribute('data-src-hd');
+          })();
+        </script>
+    </div>
+    <div class="launch-tools">
+        <button type="button" class="sound-btn" id="launch-sound" aria-label="Turn sound on" hidden>
+            <i class="fa-solid fa-volume-high" aria-hidden="true"></i> Sound on
+        </button>
+    </div>
+</section>
+
+<!-- ============================  SECTION NAVIGATOR  ============================ -->
+<!-- Dot column on the right edge of wide screens + back-to-top button (css/sectnav.css,
+     js/sectnav.js). One link per entry, in page order; each label is read from the
+     target's <h3> at runtime, the link text is the fallback (Capture, Apply have none). -->
+<nav class="sectnav" id="sectnav" aria-label="Page sections" hidden>
+    <ol>
+        <li><a href="#abstract">Overview</a></li>
+        <li><a href="#method">Method</a></li>
+        <li><a href="#apply">Apply</a></li>
+        <li><a href="#main-viz">Results</a></li>
+        <li><a href="#preview">Dataset Preview</a></li>
+        <li><a href="#citation">Citation</a></li>
+    </ol>
+</nav>
+<button type="button" class="sectnav-top" id="sectnav-top" aria-label="Back to top" hidden>
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M10 15.5V4.6M4.8 9.6 10 4.4l5.2 5.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+<script src="js/sectnav.js?v=1" defer></script>
+
+<!-- ============================  OVERVIEW (CAPTURE VIDEO + ABSTRACT)  ============================ -->
+<section id="abstract" class="page-section">
+    <h3 class="cloth-title"><img src="images/titles/overview.png?v=2" alt="" width="539" height="99" decoding="async"><span class="sr-only">Overview</span></h3>
+    <div class="section-rule"></div>
+
+    <!-- Abstract and contributions: from the paper
+         (sec/0_abstract.tex, sec/1_intro.tex), lightly adapted for the web; the
+         observation count is from sec/3_dataset.tex ("Observation tensor"). -->
+    <h4 class="subsection-title">Abstract</h4>
+    <p class="lead-text">
+        <!-- the paper's abstract, verbatim -->
+        We present <b>RoboCloth</b>, a dataset of 500 real cloth materials captured under flexible,
+        calibrated camera and lighting configurations, where both are robotically controlled during
+        acquisition.
+        Each material is imaged in approximately 580 high-dynamic range frames spanning a wide
+        view-light hemisphere; camera poses are refined via structure-from-motion and aligned to the
+        robot frame, yielding per-material sparse surface geometry and structured per-point reflectance
+        observations ready for neural material training.
+        We demonstrate the value of this data through a two-stage neural reconstruction pipeline:
+        Stage&nbsp;1 trains a shared MLP decoder on our corpus to learn cloth material priors;
+        Stage&nbsp;2 then freezes the decoder and fits a dense 2048&times;2048 latent texture to each
+        target material.
+        Evaluating on held-out materials from our own dataset and on the independent UBO2014 benchmark,
+        we show that a decoder trained on our captures outperforms decoders trained on existing measured
+        reflectance datasets and analytic PBR fitting, transferring to unseen acquisition systems without
+        modification.
+        The dataset, calibration files, observation tensors, and train/test splits are released under
+        CC&nbsp;BY&nbsp;4.0 on the
+        <a href="https://huggingface.co/datasets/koalapenguin/RoboCloth" target="_blank" rel="noopener">Hugging Face Hub</a>.
+    </p>
+
+    <h4 class="subsection-title">Pipeline</h4>
+    <!-- Paper figures (figures/pipeline_stage{1,2}_crop.pdf, 300 dpi -> 2000 px)
+         with their captions from figures/stage1.tex and figures/stage2.tex. -->
+    <figure class="method-figure">
+        <a href="images/pipeline_stage1.png" target="_blank" rel="noopener" title="Open full size">
+            <img src="images/pipeline_stage1.png?v=35" width="2000" height="652" loading="lazy" decoding="async"
+                 alt="Stage 1 pipeline: sparse COLMAP points of several materials, per-point latent codes, normals and tangents, the shared transform T, and a jointly trained BRDF decoder">
+        </a>
+        <figcaption>
+            <b>Stage&nbsp;1 &mdash; learning a material prior.</b>
+            A single BRDF decoder, shared across all training materials, is
+            optimized jointly (flame icon) with per-point tables of latent codes,
+            normals, and tangents.
+            N: normal, T: tangent, D: encoded local directions; each color
+            denotes one material, with a few points drawn per material in every
+            minibatch.
+        </figcaption>
+    </figure>
+    <figure class="method-figure">
+        <a href="images/pipeline_stage2.png" target="_blank" rel="noopener" title="Open full size">
+            <img src="images/pipeline_stage2.png?v=35" width="2000" height="476" loading="lazy" decoding="async"
+                 alt="Stage 2 pipeline: a dense latent grid for one material, the parallax-aware lookup P, the shared transform T, and the frozen BRDF decoder">
+        </a>
+        <figcaption>
+            <b>Stage&nbsp;2 &mdash; dense material reconstruction.</b>
+            For a single target material, a dense latent-geometry texture is
+            optimized (flame icon) through the parallax-aware lookup <i>P</i>, the
+            shared transform <i>&#x1D4AF;</i>, and the frozen decoder (snowflake icon).
+            Notation as in Stage&nbsp;1.
+        </figcaption>
+    </figure>
+
+
+</section>
+
+<!-- ============================  METHOD  ============================ -->
+<section id="method" class="page-section">
+    <h3 class="cloth-title"><img src="images/titles/method.png?v=2" alt="" width="420" height="102" decoding="async"><span class="sr-only">Method</span></h3>
+    <div class="section-rule"></div>
+
+    <!-- Method video (method_light_v5, cut before the room beat: it ends on the flat 5x2 grid
+         of the room's 10 optimised latent grids, whose ten room materials js/handoff.js flies into the
+         panel below; tile rectangles in media/robocloth_method_tiles.json). Voiced (muted autoplay + Sound-on pill), captions
+         burned in. -->
+    <div style="text-align:center">
+        <video id="method-video" loop muted playsinline controls preload="metadata" data-play-in-view
+               poster="media/robocloth_method_poster.jpg?v=8" width="1920" height="1080"
+               style="max-width:100%; height:auto; aspect-ratio:16/9; display:block; margin:0 auto; border-radius:8px; background:#fafbfc;">
+            <source src="media/robocloth_method.mp4?v=15" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="launch-tools">
+            <button type="button" class="sound-btn" id="method-sound" aria-label="Turn sound on" hidden>
+                <i class="fa-solid fa-volume-high" aria-hidden="true"></i> Sound on
+            </button>
+        </div>
+    </div>
+    <script src="js/handoff.js?v=9" defer></script>
+
+    <!-- Apply a trained material (interactive; continues the method video's story).
+         js/room_core.js draws the room, js/room_a.js the interaction; assets in media/room/
+         (~1 MB up front, ~0.4 MB per material on its first use), built by tools/room/
+         (passes.py renders, build_assets.py packs).
+         Nothing is fetched until the panel approaches the viewport. -->
+    <div class="room-block" id="apply">
+        <h4 class="room-title">Texture the room with a trained material</h4>
+        <p class="room-hint" id="room-hint">
+            <span class="hint-fine">Drag a material onto any sofa, pillow, cushion, the rug or the curtain.</span>
+            <span class="hint-coarse">Tap a material, then any sofa, pillow, cushion, the rug or the curtain.</span>
+        </p>
+        <div class="room-panel room-a" id="room-panel" data-assets="media/room/" data-v="7">
+            <div class="room-side" aria-label="Trained materials (latent textures)"></div>
+            <div class="room-viewport">
+                <div class="room-view">
+                    <div class="room-stage">
+                        <canvas class="room-canvas" width="1920" height="900"
+                                aria-label="Living room whose sofas, pillows, floor cushions, rug and left curtain are untextured"></canvas>
+                        <div class="room-tag" aria-hidden="true"></div>
+                    </div>
+                </div>
+                <button class="room-reset" type="button" disabled>
+                    <svg viewBox="0 0 20 20" width="13" height="13" aria-hidden="true"><path d="M4 10a6 6 0 1 0 2-4.47" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3.5 3.2v3.6h3.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Reset
+                </button>
+                <div class="room-loading">Loading the room&hellip;</div>
+            </div>
+        </div>
+        <p class="room-caption room-note">
+            <span class="note-label">Rendering note</span>
+            Each tile is a trained 2048&times;2048 latent texture, coloured by decoding every texel
+            with the frozen decoder under a 45&deg; light. Dropped on an object, it becomes the full
+            material (relief, sheen and view dependence), which is path-traced on
+            the piece you choose; every piece takes its own material. Each piece is pre-rendered in
+            every material (3840&nbsp;px, 1024&nbsp;spp; 1920&nbsp;px on phones and standard screens)
+            and the combination is assembled live;
+            the light a dressed piece throws onto the rest of the room is added as a smooth
+            low-resolution correction.
+        </p>
+    </div>
+
+</section>
+
+<!-- ============================  RESULTS  ============================ -->
+<!-- From the paper: setup wording from the experiments section, numbers from its
+     the paper's result tables and tables/ubo.tex (UBO2014).
+     Every number below is written by tools/results/build_results.py: the blocks between
+     "BEGIN/END generated:results-*" and the text of each <span data-res="..."> are
+     regenerated from the parsed tables, so edit the tool (or the tables), never the numbers.
+     Styles: css/results.css. -->
+<section id="main-viz" class="page-section">
+    <h3 class="cloth-title"><img src="images/titles/results.png?v=2" alt="" width="389" height="102" decoding="async"><span class="sr-only">Results</span></h3>
+    <div class="section-rule"></div>
+    <h4 class="res-subtitle" id="results-datasets">Compared with existing material datasets</h4>
+    <div class="res-card res-table-card">
+        <div class="res-scroll">
+            <!-- BEGIN generated:results-related (tools/results/build_results.py) -->
+            <table class="res-table res-related">
+              <colgroup>
+                <col class="res-c-stub">
+                <col class="res-c-num">
+                <col class="res-c-num">
+                <col class="res-c-flag">
+                <col class="res-c-flag">
+                <col class="res-c-flag">
+                <col class="res-c-flag">
+                <col class="res-c-flag">
+              </colgroup>
+              <thead><tr>
+                <th scope="col" class="res-stub">Dataset</th>
+                <th scope="col" class="res-num">Year</th>
+                <th scope="col" class="res-num">Materials</th>
+                <th scope="col">Cloth-specific</th>
+                <th scope="col">Real-world</th>
+                <th scope="col">Spatially varying</th>
+                <th scope="col">Multiple views</th>
+                <th scope="col">Flexible coverage</th>
+              </tr></thead>
+              <tbody>
+                <tr>
+                  <th scope="row" class="res-stub">MERL</th>
+                  <td class="res-num">2003</td>
+                  <td class="res-num">100</td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                </tr>
+                <tr>
+                  <th scope="row" class="res-stub">UTIA</th>
+                  <td class="res-num">2014</td>
+                  <td class="res-num">150</td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                </tr>
+                <tr class="res-base">
+                  <th scope="row" class="res-stub">UBO2014 <span class="res-tag">main baseline</span></th>
+                  <td class="res-num">2014</td>
+                  <td class="res-num">84</td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                </tr>
+                <tr class="res-base">
+                  <th scope="row" class="res-stub">UBOFAB19 <span class="res-tag">main baseline</span></th>
+                  <td class="res-num">2019</td>
+                  <td class="res-num">378</td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                </tr>
+                <tr>
+                  <th scope="row" class="res-stub">Real-SVBRDF</th>
+                  <td class="res-num">2020</td>
+                  <td class="res-num">80</td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                </tr>
+                <tr>
+                  <th scope="row" class="res-stub">PhotoMat</th>
+                  <td class="res-num">2023</td>
+                  <td class="res-num">12,000</td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                </tr>
+                <tr>
+                  <th scope="row" class="res-stub">UMat</th>
+                  <td class="res-num">2023</td>
+                  <td class="res-num">2,000</td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                </tr>
+                <tr>
+                  <th scope="row" class="res-stub">OpenSVBRDF</th>
+                  <td class="res-num">2023</td>
+                  <td class="res-num">1,000</td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                </tr>
+                <tr>
+                  <th scope="row" class="res-stub">MatSynth</th>
+                  <td class="res-num">2024</td>
+                  <td class="res-num">4,069</td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                  <td><span class="res-glyph res-no" role="img" aria-label="no"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></td>
+                </tr>
+                <tr class="res-ours">
+                  <th scope="row" class="res-stub">RoboCloth <span class="res-tag res-tag-ours">ours</span></th>
+                  <td class="res-num">—</td>
+                  <td class="res-num">500</td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                  <td><span class="res-glyph res-yes" role="img" aria-label="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- END generated:results-related -->
+        </div>
+        <div class="res-footnote">
+            <p><b>Cloth-specific:</b> the materials are fabrics.
+               <b>Real-world:</b> measured from physical samples, not synthesised.
+               <b>Spatially varying:</b> reflectance captured per surface point (a texture), not one BRDF per material.
+               <b>Multiple views:</b> more than two distinct viewing directions.
+               <b>Flexible coverage:</b> camera and light poses not confined to a fixed dome, gantry or scanner
+               layout &mdash; RoboCloth is the only dataset with all five properties.
+               <b>Main baseline:</b> UBO2014 is the test benchmark of the chart; UBOFAB19 trains the strongest competing decoder.</p>
+        </div>
+    </div>
+
+
+
+    <h4 class="res-subtitle" id="results-psnr">Reconstruction quality on UBO2014</h4>
+    <p class="lead-text res-setup">
+        A controlled protocol: the decoder architecture, renderer and Stage&nbsp;2 procedure are held fixed
+        across all comparisons, so differences in reconstruction quality are directly attributable to the
+        training data &mdash; a decoder trained on <b>RoboCloth</b>, <b>UBOFAB19</b> or <b>MERL</b>, fitted to
+        <span data-res="ubo2014.n">12</span> held-out UBO2014 materials; <b>PBR</b> is an analytic fit with no learned prior.
+    </p>
+
+    <figure class="res-figure" id="results-chart">
+        <div class="res-card res-chart-card">
+            <!-- BEGIN generated:results-chart (tools/results/build_results.py) -->
+            <picture>
+              <source media="(max-width: 820px)" srcset="images/results/psnr_averages_narrow.svg?v=3" width="330" height="326">
+              <img class="res-chart-img" src="images/results/psnr_averages.svg?v=3" width="880" height="338" loading="lazy" decoding="async"
+                   alt="Horizontal bar chart. Mean PSNR on UBO2014 (12 held-out materials), best configuration per method. PSNR in dB, higher is better; the axis starts at 25 dB. RoboCloth 36.76, PBR 33.05, UBOFAB19 32.27, MERL 30.64.">
+            </picture>
+            <!-- END generated:results-chart -->
+        </div>
+    </figure>
+</section>
+
+<!-- ============================  DATASET PREVIEW  ============================ -->
+<section id="preview" class="page-section">
+    <h3 class="cloth-title"><img src="images/titles/dataset-preview.png?v=2" alt="" width="897" height="99" decoding="async"><span class="sr-only">Dataset Preview</span></h3>
+    <div class="section-rule"></div>
+    <p class="lead-text" style="text-align:center;color:var(--muted);">
+        The dataset is split into a <b>train</b> set and a <b>test</b> set
+        following the official lists in
+        <code>globals/training_list_500.txt</code> /
+        <code>globals/test_list_500.txt</code>.
+        20 train and 5 test materials are shown as thumbnails below;
+        every one of the remaining materials is linked further down so
+        you can browse all <b id="train-total">400</b>&nbsp;+&nbsp;<b id="test-total">100</b>
+        without leaving this page.
+    </p>
+
+    <!-- Train preview -->
+    <h4 class="split-heading">
+        <span class="split-chip train">Train</span>
+        <span class="split-heading-tail">20 of <b id="train-count">400</b> shown</span>
+    </h4>
+    <div id="train-preview-grid" class="preview-grid">
+        <div class="status-line"><span class="spinner"></span> Loading preview manifest…</div>
+    </div>
+
+    <!-- Test preview -->
+    <h4 class="split-heading" style="margin-top:2.5rem">
+        <span class="split-chip test">Test</span>
+        <span class="split-heading-tail">5 of <b id="test-count">100</b> shown</span>
+    </h4>
+    <div id="test-preview-grid" class="preview-grid"></div>
+
+    <!-- Full ID lists -->
+    <h4 class="split-heading" style="margin-top:3rem">
+        <span class="split-chip train">Train</span>
+        <span class="split-heading-tail">all material IDs</span>
+    </h4>
+    <div id="train-all-list" class="id-pill-list"></div>
+
+    <h4 class="split-heading" style="margin-top:2rem">
+        <span class="split-chip test">Test</span>
+        <span class="split-heading-tail">all material IDs</span>
+    </h4>
+    <div id="test-all-list" class="id-pill-list"></div>
+</section>
+
+<script>
+    // Mirror the counts header (the bigger top numbers) into the inline
+    // heading suffixes so they stay in sync with the manifest.
+    document.addEventListener("DOMContentLoaded", () => {
+        const sync = (from, to) => {
+            const obs = new MutationObserver(() => {
+                const t = document.getElementById(to);
+                if (t) t.textContent = document.getElementById(from).textContent;
+            });
+            const src = document.getElementById(from);
+            if (src) obs.observe(src, { childList: true, characterData: true, subtree: true });
+        };
+        sync("train-total", "train-count");
+        sync("test-total",  "test-count");
+    });
+</script>
+
+<!-- ============================  CITATION  ============================ -->
+<section id="citation" class="page-section">
+    <h3 class="cloth-title"><img src="images/titles/citation.png?v=2" alt="" width="425" height="94" decoding="async"><span class="sr-only">Citation</span></h3>
+    <div class="section-rule"></div>
+    <pre class="citation-block">@misc{li2026robocloth,
+  title  = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
+  author = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
+  year   = {2026}
+}</pre>
+</section>
+
+<footer>
+    Page template loosely inspired by
+    <a href="https://oppo-us-research.github.io/OpenIllumination/" target="_blank">OpenIllumination</a>.
+    Dataset assets stream directly from the public
+    <a href="https://huggingface.co/datasets/koalapenguin/RoboCloth" target="_blank">Hugging Face dataset repository</a>;
+    checkpoints, renders and full-resolution videos from
+    <a href="https://huggingface.co/datasets/koalapenguin/RoboCloth-assets" target="_blank">RoboCloth-assets</a>.
+    Code: <a href="https://github.com/theialab/robocloth" target="_blank">github.com/theialab/robocloth</a>.
+</footer>
+
+<!-- Cache-bust JS files (bump ?v= when any of them changes). -->
+<script src="js/config.js?v=36"></script>
+<script src="js/transforms.js?v=35"></script>
+<script src="js/tar_reader.js?v=37"></script>
+<script src="js/hdr_display.js?v=38"></script>
+<script src="js/main.js?v=36"></script>
+<script src="js/media.js?v=38"></script>
+<script src="js/room_core.js?v=8"></script>
+<script src="js/room_a.js?v=14"></script>
+
+</body>
+</html>

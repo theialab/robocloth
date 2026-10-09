@@ -1,0 +1,37 @@
+WEBVTT
+
+1
+00:00.200 --> 00:02.300
+This neural material looks beautifully real.
+
+2
+00:02.350 --> 00:03.800
+So what does it take to train one?
+
+3
+00:03.850 --> 00:05.250
+Training data: real cloth,
+
+4
+00:05.300 --> 00:06.230
+from many views,
+
+5
+00:06.280 --> 00:07.710
+under many lights.
+
+6
+00:08.000 --> 00:11.910
+We use two robot arms: one moves the camera, one moves the light,
+
+7
+00:12.200 --> 00:16.050
+capturing 580 views per cloth, 500 cloths in total.
+
+8
+00:16.100 --> 00:17.850
+Eighty billion observations.
+
+9
+00:17.900 --> 00:19.480
+This is RoboCloth.

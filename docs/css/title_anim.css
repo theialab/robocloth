@@ -1,0 +1,75 @@
+/* ============================================================
+ *  Animated "RoboCloth" header title (js/title_anim.js)
+ *  The word is pieced from real fabric patches (the launch video's closing title):
+ *  media/title/ holds the renders (see media/title/title.json).
+ *
+ *  Light-page renders v2 (theme "light", web_title.py build-light2): the word alone, no
+ *  backdrop / shadow / glow, graded for contrast on a white page, crisp dark outline;
+ *  1x (lit.webp, sweep/) and 2x (lit_2x.webp, sweep2x/, picked on devicePixelRatio > 1.3).
+ *  Geometry in units of the letters' box (W = word width, H = word height, W/H = 6.6888):
+ *    stage   x -0.0107 .. 1.0114 W,  y -0.72 .. 1.0701 H   (lamp band above the word)
+ *    still   x -0.0107 .. 1.0114 W,  y -0.0714 .. 1.0701 H (lit.webp, the sweep frames)
+ *  -> stage aspect 3.8193; the still is the bottom 63.77 %.
+ *  (light v1 with cast shadows: media/title/light_v1/, aspect 3.4799, top 32.98 %, height 67.02 %;
+ *   the dark renders: media/title/dark/, aspect 3.654, top 30.53 %, height 69.47 %)
+ * ============================================================ */
+
+.jumbotron.has-title-anim { padding-top: 1.4rem; }
+
+.title-anim {
+    position: relative;
+    display: block;
+    width: min(590px, 90vw);
+    aspect-ratio: 3.8193;
+    margin: 0 auto 0.55rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y;          /* horizontal drags scrub, vertical drags still scroll */
+}
+
+.title-anim .title-lit {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    top: 36.23%;
+    height: 63.77%;
+    display: block;
+    pointer-events: none;
+}
+
+.title-anim canvas,
+.title-anim video {
+    position: absolute;
+    display: block;
+    pointer-events: none;
+}
+
+/* JS mode: the canvas draws everything; the <img> is the no-JS / reduced-motion /
+ * fallback state.  If the script never starts, the lit word fades in after 3.5 s. */
+.title-anim.ta-pending .title-lit {
+    opacity: 0;
+    animation: ta-fallback 0.6s ease 3.5s forwards;
+}
+.title-anim.ta-running .title-lit { animation: none; opacity: 0; }
+.title-anim.ta-static .title-lit { animation: none; opacity: 1; }
+@keyframes ta-fallback { to { opacity: 1; } }
+
+.visually-hidden-title {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 576px) {
+    .jumbotron.has-title-anim { padding-top: 0.6rem; }
+    .title-anim { width: min(590px, 92vw); margin-bottom: 0.35rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .title-anim.ta-pending .title-lit { animation: none; opacity: 1; }
+}

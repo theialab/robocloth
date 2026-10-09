@@ -1,0 +1,1070 @@
+/* ============================================================
+ *  RoboCloth project-page styles
+ *  Layout inspired by OpenIllumination; adapted to our material grid.
+ * ============================================================ */
+
+:root {
+    --brand: #2b2b2b;
+    --accent: #3367d6;
+    --accent-soft: #e8efff;
+    --muted: #6e7884;
+    --bg: #fafbfc;
+    --panel: #ffffff;
+    --border: #e6e9ee;
+    --hover: #f3f6fa;
+}
+
+/* Type: Jost (Google Fonts, linked from <head> with display=swap) on the scale of
+ * powerfoam.github.io: body copy 18 px / 1.3, section titles 2 rem / 600, sub-headings
+ * 1.25 rem / 600, authors 1.25 rem, affiliations and buttons 1 rem, captions 0.95 rem.
+ * rem sizes are relative to the 16 px root, so the body bump leaves them alone. */
+html, body {
+    background: var(--bg);
+    color: var(--brand);
+    font-family: "Jost", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+body {
+    font-size: 1.125rem;          /* 18 px */
+    line-height: 1.3;
+}
+
+/* --------  Header / hero  -------- */
+
+.jumbotron {
+    background: linear-gradient(180deg, #ffffff 0%, #f4f6fa 100%);
+    padding: 3.5rem 1rem 2rem;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.jumbotron h2 {
+    font-size: 2rem;              /* the tagline: Power Foam's subtitle.is-3 */
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--brand);
+    letter-spacing: 0;
+}
+
+.jumbotron .subtitle {
+    color: var(--muted);
+    font-size: 1.125rem;
+    margin-top: 0.75rem;
+}
+
+.author-list {
+    margin-top: 1.4rem;
+    line-height: 1.6;
+    font-size: 1.25rem;           /* Power Foam's .is-size-5 author line */
+}
+.author-list a { color: var(--accent); text-decoration: none; }
+.author-list a:hover { text-decoration: underline; }
+
+.venue {
+    font-size: 1.125rem;
+    margin: 0.2rem 0 1.4rem;
+    color: var(--text, inherit);
+}
+
+.author-list .footnote {
+    display: inline-block;
+    font-size: 1rem;
+    opacity: 0.85;
+    margin-top: 0.15rem;
+}
+
+.affiliations {
+    color: var(--muted);
+    font-size: 1rem;              /* .is-size-6 affiliations */
+    margin-top: 0.5rem;
+}
+
+.btn-group-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0 0.5rem;
+}
+
+.btn-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1.2rem;
+    border-radius: 999px;
+    background: white;
+    color: var(--brand);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    font-size: 1rem;              /* .button.is-normal */
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-pill:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(51, 103, 214, 0.15);
+}
+
+/* --------  Sections  -------- */
+
+section.page-section {
+    padding: 2.5rem 0 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+section.page-section h3 {
+    font-weight: 600;
+    font-size: 2rem;              /* Power Foam's section titles (.title.is-3), all widths */
+    line-height: 1.125;
+    letter-spacing: 0;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+section.page-section .section-rule {
+    width: 60px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    margin: 0 auto 1.1rem;
+}
+
+.lead-text {
+    font-size: 1.125rem;
+    line-height: 1.45;
+    text-align: left;             /* body text: left-aligned, medium weight (Power Foam) */
+    font-weight: 500;
+    color: #363636;
+    padding: 0 1rem;
+}
+
+/* --------  Teaser placeholder  -------- */
+
+.teaser-box {
+    margin: 0 auto 1.5rem;
+    padding: 2rem;
+    background: var(--panel);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    text-align: center;
+    color: var(--muted);
+    max-width: 950px;
+}
+.teaser-box img { max-width: 100%; border-radius: 4px; }
+
+/* Slots for content to be filled later */
+.placeholder-slot {
+    margin: 1.5rem auto;
+    padding: 1.75rem;
+    background: var(--panel);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    text-align: center;
+    color: var(--muted);
+    max-width: 950px;
+    font-size: 1rem;
+}
+.placeholder-slot strong { color: var(--brand); }
+
+/* --------  Train / Test split headings + ID pill list  -------- */
+
+.split-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    font-size: 1.25rem;           /* sub-heading: Power Foam's .title.is-5 */
+    color: var(--brand);
+    margin: 1.6rem 1rem 0.8rem;
+}
+
+.split-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: white;
+}
+.split-chip.train { background: #3367d6; }   /* blue */
+.split-chip.test  { background: #ec4899; }   /* pink */
+
+.split-heading-tail {
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.id-pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    padding: 0 1rem;
+}
+
+.id-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.4rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    color: var(--brand);
+    text-decoration: none;
+    transition: all 0.12s ease;
+}
+.id-pill:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+/* --------  Dataset grid  -------- */
+
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 14px;
+    padding: 0 1rem;
+}
+
+.material-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+}
+
+.material-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    border-color: var(--accent);
+    text-decoration: none;
+    color: inherit;
+}
+
+.material-card .thumb-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #0d0f12;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.material-card .thumb-wrap canvas,
+.material-card .thumb-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.material-card .thumb-wrap .loading-spinner {
+    position: absolute;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.8rem;
+}
+
+.material-card .card-body {
+    padding: 0.55rem 0.7rem;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.material-card .card-id {
+    font-weight: 600;
+    color: var(--brand);
+}
+
+.material-card .card-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 0.1rem;
+}
+
+/* --------  obj.html (material detail)  -------- */
+/* The viewer shares the main page's language: Jost, the dark hero pills,
+ * white cards with a 1 px border and the results cards' soft shadow,
+ * 1.25 rem / 600 sub-headings above each card, body text left-aligned. */
+
+.material-detail {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 0;
+}
+
+/* header: title + the two counts on the left, the nav pills on the right */
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    margin-bottom: 1.75rem;
+}
+.detail-header h1 {
+    margin: 0;
+    font-size: 2rem;                  /* the main page's section titles */
+    font-weight: 600;
+    line-height: 1.125;
+    letter-spacing: 0;
+    color: var(--brand);
+}
+/* the main page's section rule, left-aligned under the title */
+.detail-header h1::after {
+    content: "";
+    display: block;
+    width: 60px;
+    height: 3px;
+    margin-top: 0.5rem;
+    background: var(--accent);
+    border-radius: 2px;
+}
+.detail-header h1 .split-chip {
+    vertical-align: 0.4em;
+    margin-left: 0.45rem;
+}
+.detail-header h1 .split-chip[hidden] { display: none; }
+.detail-header .subtitle {
+    margin: 0.7rem 0 0;
+    font-size: 1.125rem;              /* body text: Jost 500, dark */
+    font-weight: 500;
+    line-height: 1.3;
+    color: #363636;
+}
+.detail-header .subtitle b { font-weight: 600; }
+
+/* nav: the hero pills (arXiv · Paper · Code · Dataset), one step smaller */
+.detail-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.6rem;
+}
+.detail-nav .hero-btn {
+    padding: 0.5rem 1.15rem;
+    font-size: 1rem;
+    border: 0;                        /* Prev / Next are <button>s */
+    font-family: inherit;
+    cursor: pointer;
+}
+.detail-nav .hero-btn .hero-ico { font-size: 1em; }
+.detail-nav .hero-btn:focus { outline: none; }
+.detail-nav .hero-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.detail-nav .hero-btn:disabled {
+    background: #a9adb5;              /* as the main page's pending pills */
+    cursor: default;
+    transform: none;
+}
+.detail-nav .lbl-short { display: none; }
+
+/* two columns: the capture + sliders, the 3-D scenes + info */
+.detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 1.75rem 1.5rem;
+    align-items: start;
+}
+.left-column,
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    min-width: 0;
+}
+@media (max-width: 980px) {
+    .detail-grid { grid-template-columns: 1fr; }
+}
+
+/* a sub-heading above each card, as the main page's h4 above its cards */
+.panel-title {
+    margin: 0 0 0.6rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--brand);
+    text-align: left;
+}
+
+/* the cards: the results cards' treatment */
+.image-panel,
+.slider-panel,
+.viz-panel,
+.info-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(20, 30, 50, 0.04), 0 8px 24px rgba(20, 30, 50, 0.05);
+    overflow: hidden;
+}
+
+/* --- the capture --- */
+
+.image-panel .image-wrap {
+    aspect-ratio: 3 / 2;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.image-panel .image-wrap canvas,
+.image-panel .image-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* Loading badge over the capture: the previous frame stays visible
+   (slightly dimmed) while the next one downloads / decodes. */
+.image-panel .image-wrap .img-loading {
+    position: absolute;
+    left: 0.6rem;
+    top: 0.6rem;
+    display: none;
+    align-items: center;
+    max-width: calc(100% - 1.2rem);
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(13, 15, 18, 0.72);
+    color: #e8eaee;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+}
+.image-panel .image-wrap.is-loading .img-loading { display: inline-flex; }
+.image-panel .image-wrap.is-loading canvas { opacity: 0.82; }
+.image-panel .image-wrap canvas { transition: opacity 0.2s; }
+.image-panel .image-wrap .img-loading .spinner {
+    width: 10px;
+    height: 10px;
+    margin-right: 0.4rem;
+    border-color: rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+}
+/* Nothing painted yet: the same badge, centred and larger. */
+.image-panel .image-wrap.is-empty .img-loading {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 0.45rem 0.95rem;
+    font-size: 0.95rem;
+}
+.image-panel .image-wrap.is-empty .img-loading .spinner { width: 12px; height: 12px; }
+/* Download progress along the bottom edge of the image. */
+.image-panel .image-wrap .img-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.12);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+.image-panel .image-wrap .img-progress i {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.15s linear;
+}
+.image-panel .image-wrap.is-loading.has-progress .img-progress { opacity: 1; }
+
+/* the file name and the pose under the capture: one mono chip style */
+.image-panel .image-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    padding: 0.7rem 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.95rem;
+    color: var(--muted);
+}
+.image-panel .image-meta .meta-file,
+.image-panel .image-meta .meta-pose {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    min-width: 0;
+}
+.image-panel .image-meta .meta-k { margin-left: 0.5rem; }
+.image-panel .image-meta .meta-k:first-child { margin-left: 0; }
+.image-panel .image-meta code,
+.material-info code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--brand);
+    background: var(--hover);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.08rem 0.5rem;
+    white-space: nowrap;
+}
+.image-panel .image-meta .spinner { margin-right: 0.15rem; }
+
+/* --- the sliders --- */
+
+.slider-panel { padding: 1.1rem 1.25rem 1.25rem; }
+
+.slider-group { margin-bottom: 1.15rem; }
+
+.slider-group .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--brand);
+    cursor: pointer;
+}
+
+/* value chips: small, rounded, the accent tint */
+.value-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* one range style: a slim track with the accent fill (--p, set by obj.html)
+   and a white thumb with an accent ring; hover / focus widen the ring */
+.slider-group input[type="range"] {
+    --p: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+}
+.slider-group input[type="range"]:focus { outline: none; }
+.slider-group input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right,
+        var(--accent) 0, var(--accent) calc(9px + (100% - 18px) * var(--p)),
+        var(--border) calc(9px + (100% - 18px) * var(--p)), var(--border) 100%);
+}
+.slider-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--accent);
+    box-shadow: 0 1px 3px rgba(20, 30, 50, 0.2);
+    transition: box-shadow 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+.slider-group input[type="range"]:hover::-webkit-slider-thumb,
+.slider-group input[type="range"]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 5px var(--accent-soft), 0 1px 3px rgba(20, 30, 50, 0.2);
+}
+.slider-group input[type="range"]:active::-webkit-slider-thumb {
+    background: var(--accent);
+    transform: scale(1.08);
+    cursor: grabbing;
+}
+.slider-group input[type="range"]::-moz-range-track {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+}
+.slider-group input[type="range"]::-moz-range-progress {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--accent);
+}
+.slider-group input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--accent);
+    box-shadow: 0 1px 3px rgba(20, 30, 50, 0.2);
+}
+.slider-group input[type="range"]:hover::-moz-range-thumb,
+.slider-group input[type="range"]:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 5px var(--accent-soft), 0 1px 3px rgba(20, 30, 50, 0.2);
+}
+
+/* the buttons under the sliders: the main page's white pills, one step smaller */
+.controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.6rem;
+    margin-top: 1.35rem;
+}
+.material-detail .btn-pill {
+    padding: 0.4rem 1rem;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    gap: 0.45rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+.material-detail .btn-pill i { font-size: 0.95em; }
+.material-detail .btn-pill:focus { outline: none; }
+.material-detail .btn-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.material-detail .btn-pill.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* --- the 3-D scenes (their dark canvases: css/viz3d.css) --- */
+
+.viz-panel canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+}
+.right-column .note { margin: 0.9rem 0 0; }
+.right-column .note:last-child { margin-bottom: 0; }
+
+/* --- phones --- */
+
+@media (max-width: 576px) {
+    .material-detail { padding: 1.25rem 1rem 0; }
+    .detail-header { gap: 0.9rem; margin-bottom: 1.25rem; }
+    .detail-header h1 { font-size: 1.5rem; }
+    .detail-header h1::after { width: 48px; margin-top: 0.4rem; }
+    .detail-header .subtitle { font-size: 1rem; margin-top: 0.55rem; }
+    .detail-nav { gap: 0.4rem 0.45rem; width: 100%; }
+    .detail-nav .hero-btn { padding: 0.42rem 0.95rem; font-size: 0.95rem; gap: 0.45rem; }
+    .detail-nav .lbl-long { display: none; }
+    .detail-nav .lbl-short { display: inline; }
+    .detail-grid { gap: 1.5rem; }
+    .left-column, .right-column { gap: 1.5rem; }
+    .panel-title { font-size: 1.15rem; }
+    .image-panel .image-meta { padding: 0.6rem 0.8rem; font-size: 0.9rem; }
+    .slider-panel { padding: 1rem 1rem 1.1rem; }
+    .slider-group .slider-label { font-size: 1rem; }
+    .material-detail .btn-pill { padding: 0.38rem 0.85rem; font-size: 0.92rem; }
+}
+
+/* --------  Footer  -------- */
+
+footer {
+    margin-top: 2rem;
+    padding: 1.5rem 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 1rem;
+    border-top: 1px solid var(--border);
+}
+footer a { color: var(--accent); text-decoration: none; }
+
+/* --------  Material info panel (obj.html)  -------- */
+
+.material-info {
+    padding: 0.9rem 1.1rem 1rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.material-info .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.25rem 0;
+}
+.material-info .info-row.info-row-block {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+
+/* labels: the results table's column-header style */
+.material-info .info-label {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.25;
+}
+
+.material-info .info-value {
+    color: var(--brand);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.material-info .color-swatch {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: #555;
+    border: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+/* Per-channel BRDF range bars.
+ * Each bar's full line is the 0..65 535 capture range; the channel-
+ * coloured centre segment is the actual non-zero data range for that
+ * channel. Values appear inline to the right of the bar — no absolute
+ * positioning floating over neighbouring rows. */
+
+.material-info .channel-bar {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    line-height: 1;
+}
+
+.material-info .channel-label {
+    font-weight: 700;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* Channel colours: applied to the label text, the bar fill, and the
+ * inline range numbers via the .ch-r/.ch-g/.ch-b modifier on the row. */
+.material-info .ch-r { --ch: #dc2626; }
+.material-info .ch-g { --ch: #16a34a; }
+.material-info .ch-b { --ch: #2563eb; }
+.material-info .channel-bar { color: var(--ch); }
+
+.material-info .channel-track {
+    position: relative;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.material-info .channel-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    min-width: 2px;
+    background: var(--ch);
+    border-radius: 3px;
+    transition: left 0.15s ease, width 0.15s ease;
+}
+
+.material-info .channel-range {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    color: var(--ch);
+}
+.material-info .channel-range code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+.material-info .channel-range .dash {
+    margin: 0 0.2rem;
+    color: var(--muted);
+}
+
+.material-info .channel-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--muted);
+    /* match the track's left edge (label is 14px + 0.45rem gap = ~21px) */
+    padding: 0 0 0 calc(14px + 0.45rem);
+    margin-top: 0.1rem;
+    line-height: 1;
+}
+
+/* --------  Inline status / spinner  -------- */
+
+.status-line {
+    text-align: center;
+    color: var(--muted);
+    font-size: 1rem;
+    padding: 0.5rem;
+}
+.spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid #d1d5db;
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: -3px;
+    margin-right: 0.45rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --------  Citation block  -------- */
+
+.citation-block {
+    background: #f2f4f8;
+    padding: 1.1rem 1.4rem;
+    border-radius: 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.95rem;
+    overflow-x: auto;
+    white-space: pre;
+    color: #2d2d2d;
+}
+
+/* --------  Launch (teaser) video, right under the hero  -------- */
+
+.launch-section {
+    max-width: 1132px;          /* 1100 px video + 2 x 1rem gutter */
+    margin: 0 auto;
+    padding: 1.75rem 1rem 0.25rem;
+}
+.launch-video-wrap { position: relative; }
+#launch-video {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    background: #000;
+}
+
+/* "Sound on" pill in a row under the muted autoplaying launch video (kept out of the
+   frame so it never covers the video's own on-screen labels). */
+.launch-tools { display: flex; justify-content: flex-end; min-height: 1.9rem; margin-top: 0.45rem; }
+.sound-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--border, #d9dce3);
+    background: #fff;
+    color: var(--text, #2b2b2b);
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.2;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: background 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+.sound-btn:hover,
+.sound-btn:focus-visible { background: #f1f3f7; border-color: #b9bfcc; outline: none; }
+.sound-btn[hidden],
+.btn-pill[hidden] { display: none !important; }
+
+/* "Full-resolution original" line under a video. */
+.video-source-link {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: -0.2rem;
+}
+.video-source-link a { color: var(--accent); }
+
+/* --------  Abstract + contributions (Overview)  -------- */
+
+.subsection-title {
+    font-weight: 600;
+    font-size: 1.25rem;           /* sub-heading: Power Foam's .title.is-5 */
+    line-height: 1.25;
+    margin: 2rem 1rem 0.6rem;
+}
+.contrib-list {
+    line-height: 1.4;
+    color: #3a3f47;
+    padding: 0 1rem 0 2.6rem;
+    margin-bottom: 0;
+}
+.contrib-list li { margin-bottom: 0.45rem; }
+
+/* --------  Method section (video + two paper figures)  -------- */
+
+.method-figure { margin: 2.2rem auto 0; }
+.method-figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+}
+.method-figure figcaption {
+    font-size: 0.95rem;           /* captions: Power Foam's .method-caption */
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0.8rem 1rem 0;
+}
+.method-figure figcaption b { color: var(--brand); }
+/* the method video's caption carries an inline font-size in index.html: same caption size */
+#method-video + p { font-size: 0.95rem !important; line-height: 1.5; }
+
+/* --------  Phones: compact hero so the buttons and the launch video
+ *            make it into the first screen. Desktop is unaffected.  -------- */
+
+@media (max-width: 576px) {
+    .jumbotron { padding: 1.25rem 0.25rem 1rem; }
+    .jumbotron h2 {
+        font-size: 1.4rem;        /* Power Foam's phone subtitle */
+        line-height: 1.3;
+        margin-bottom: 0;
+    }
+    .jumbotron h2 .title-name { font-size: 2rem; line-height: 1.2; }
+    .jumbotron h2 br.br-wide { display: none; }
+    .jumbotron .subtitle {
+        font-size: 0.95rem;
+        line-height: 1.45;
+        margin: 0.5rem 0 0;
+    }
+    .jumbotron .author-list {
+        margin: 0.65rem 0 0;
+        line-height: 1.5;
+        font-size: 1.05rem;
+    }
+    .jumbotron .affiliations {
+        display: inline-block;
+        font-size: 0.9rem;
+        line-height: 1.45;
+        margin-top: 0.2rem;
+    }
+    .jumbotron .author-list .footnote { font-size: 0.9rem; margin-top: 0; }
+    .jumbotron .venue { font-size: 0.95rem; margin: 0.5rem 0 0.6rem; }
+    .jumbotron .btn-group-row { gap: 0.4rem; margin: 0.4rem 0 0; }
+    .jumbotron .btn-pill { padding: 0.42rem 0.85rem; font-size: 0.92rem; gap: 0.35rem; }
+    .launch-section { padding-top: 0.9rem; }
+    .sound-btn { font-size: 0.85rem; padding: 0.26rem 0.65rem; }
+    .lead-text { text-align: left; }   /* justified text leaves wide gaps at 390 px */
+}
+.affiliations .aff { white-space: nowrap; }
+
+/* hero links: the classic dark pills (arXiv · Paper · Code · Dataset) */
+.hero-links {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.6rem 0.75rem;
+    margin: 1.4rem 0 0.2rem;
+}
+.hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.62rem 1.45rem;
+    border-radius: 999px;
+    background: #363636;
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: background 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+.hero-btn:hover, .hero-btn:focus-visible { background: #1f1f1f; color: #fff; text-decoration: none; transform: translateY(-1px); }
+.hero-btn .hero-ico { display: inline-flex; width: 1.2em; justify-content: center; font-size: 1.05em; }
+.hero-btn.pending { background: #a9adb5; cursor: default; pointer-events: none; }
+@media (max-width: 576px) {
+    .hero-links { gap: 0.45rem 0.5rem; margin-top: 1rem; }
+    .hero-btn { padding: 0.5rem 1.05rem; font-size: 1rem; }
+}
+
+/* the method video is light on a light page: give it a visible edge so the title sits ON it */
+#method-video {
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px var(--border), 0 2px 10px rgba(20, 30, 50, 0.08);
+}
+
+/* body paragraphs are left-aligned; titles, hints and controls stay centred */
+.lead-text, .res-setup, .res-footnote, .room-caption, figcaption { text-align: left; }
+
+/* a note under an element: smaller, muted, with its label */
+.room-note, .note {
+    font-size: 0.92rem;
+    color: var(--muted);
+    border-left: 3px solid var(--border);
+    padding-left: 0.85rem;
+    margin-top: 0.9rem;
+}
+.note-label {
+    display: inline-block;
+    margin-right: 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #4a5260;
+}
+
+/* "Interactive" tag before a control line, and the hand mark on an interactive panel (Power Foam) */
+.interactive-tag {
+    display: inline-block;
+    margin-right: 0.55rem;
+    padding: 0.12rem 0.65rem;
+    border-radius: 999px;
+    background: #d9363e;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    vertical-align: 0.12em;
+}
+
+/* section titles as cloth patchwork (images/titles/, tools/title/section_titles.py) */
+.cloth-title { line-height: 1; }
+.cloth-title img { display: block; height: 2.6rem; width: auto; margin: 0 auto; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@media (max-width: 576px) { .cloth-title img { height: 2rem; } }

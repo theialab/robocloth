@@ -177,7 +177,8 @@ configs/          Hydra configs; experiment/*.yaml hold all hyperparameters,
                   renderer/rig_constants.yaml is the rig-calibration record
 calibration/      offline rig-calibration solvers (see docs/capture_pipeline.md)
 reconstruction/   capture-time reconstruction (COLMAP + robot alignment + tensors)
-docs/             the guides linked above, data_formats.md, media/ (capture video)
+docs/             the guides linked above, data_formats.md, media/ (capture video),
+                  and the project page (index.html; GitHub Pages serves this folder — see docs/WEBPAGE.md)
 envs/             pinned environments: training.txt, rendering.txt, calibration.txt, uv.txt
 assets/           README figures (paper teaser, showcase render, tables, qualitative results)
 tests/            GPU-free unit tests (drivers, checkpoint I/O, calibration, reconstruction, UV tool)

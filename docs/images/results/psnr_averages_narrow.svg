@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="330" height="326" viewBox="0 0 330 326" role="img" aria-labelledby="t d">
+<title id="t">Mean PSNR on UBO2014 (12 held-out materials), best configuration per method</title>
+<desc id="d">PSNR in dB, higher is better; the axis starts at 25 dB. RoboCloth 36.76, PBR 33.05, UBOFAB19 32.27, MERL 30.64.</desc>
+<style>text{font-family:Inter, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;fill:#2b2b2b;font-variant-numeric:tabular-nums}.tick,.sub,.axt{fill:#6e7884;font-weight:400}.name{fill:#4a515b;font-weight:600}.name.o{fill:#2b2b2b;font-weight:700}.v{fill:#4a515b;font-weight:600}.v.o{fill:#2b2b2b;font-weight:700}.in{fill:#ffffff;font-weight:600}</style>
+<rect width="330" height="326" fill="#ffffff"/>
+<text class="axt" x="0" y="17" font-size="15">PSNR (dB) on UBO2014 ↑</text>
+<line x1="89.3" x2="89.3" y1="34" y2="290" stroke="#e3e6eb" stroke-width="1"/>
+<line x1="178.7" x2="178.7" y1="34" y2="290" stroke="#e3e6eb" stroke-width="1"/>
+<line x1="268.0" x2="268.0" y1="34" y2="290" stroke="#e3e6eb" stroke-width="1"/>
+<text class="name o" x="2" y="49" font-size="15">RoboCloth</text>
+<path d="M0.00,58.00H205.11A5.0,5.0 0 0 1 210.11,63.00V81.00A5.0,5.0 0 0 1 205.11,86.00H0.00Z" fill="#3367d6"/>
+<text class="v o" data-set="ubo2014" data-col="RoboCloth" x="218.1" y="72.0" font-size="15" dominant-baseline="middle">36.76</text>
+<text class="name" x="2" y="117" font-size="15">PBR</text>
+<path d="M0.00,126.00H138.83A5.0,5.0 0 0 1 143.83,131.00V149.00A5.0,5.0 0 0 1 138.83,154.00H0.00Z" fill="#b4bbc5"/>
+<text class="v" data-set="ubo2014" data-col="PBR" x="151.8" y="140.0" font-size="15" dominant-baseline="middle">33.05</text>
+<text class="name" x="2" y="185" font-size="15">UBOFAB19</text>
+<path d="M0.00,194.00H124.89A5.0,5.0 0 0 1 129.89,199.00V217.00A5.0,5.0 0 0 1 124.89,222.00H0.00Z" fill="#b4bbc5"/>
+<text class="v" data-set="ubo2014" data-col="Bonn" x="137.9" y="208.0" font-size="15" dominant-baseline="middle">32.27</text>
+<text class="name" x="2" y="253" font-size="15">MERL</text>
+<path d="M0.00,262.00H95.77A5.0,5.0 0 0 1 100.77,267.00V285.00A5.0,5.0 0 0 1 95.77,290.00H0.00Z" fill="#b4bbc5"/>
+<text class="v" data-set="ubo2014" data-col="MERL" x="108.8" y="276.0" font-size="15" dominant-baseline="middle">30.64</text>
+<line x1="0" x2="268" y1="290" y2="290" stroke="#c5cad3" stroke-width="1"/>
+<line x1="0" x2="0" y1="34" y2="290" stroke="#c5cad3" stroke-width="1"/>
+<text class="tick" x="6.0" y="312" font-size="15" text-anchor="start">25 dB</text>
+<text class="tick" x="89.3" y="312" font-size="15" text-anchor="middle">30</text>
+<text class="tick" x="178.7" y="312" font-size="15" text-anchor="middle">35</text>
+<text class="tick" x="268.0" y="312" font-size="15" text-anchor="middle">40</text>
+</svg>

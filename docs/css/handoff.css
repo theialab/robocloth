@@ -1,0 +1,25 @@
+/* ============================================================
+ *  Method video -> room panel hand-off (js/handoff.js, which loads this file).
+ *  The six room materials lift out of the method video's last frame and fly into the
+ *  panel's tile row; the video picture dims behind them and keeps a hole where each was.
+ * ============================================================ */
+.handoff-dim,
+.handoff-hole,
+.handoff-clone {
+    position: fixed;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+.handoff-dim { z-index: 980; border-radius: 8px; opacity: 0; }     /* = the video's corners */
+.handoff-hole { z-index: 981; border-radius: 6px; opacity: 0; }
+.handoff-clone { z-index: 982; overflow: hidden; background: #e9ecf1; }
+.handoff-clone canvas { display: block; width: 100%; height: 100%; }
+
+/* the panel's tiles while their materials are on the way: empty slots (the tile's own grey
+   ground and shadow), filled again as each one lands */
+.room-side.handoff-on .room-tile > canvas,
+.room-side.handoff-on .room-tile > span { transition: opacity 0.22s ease-out; }
+.room-tile.handoff-slot > canvas,
+.room-tile.handoff-slot > span { opacity: 0; }

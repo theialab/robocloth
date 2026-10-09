@@ -1,0 +1,80 @@
+/* 3-D capture viewer panels (obj.html, js/viz.js): the dark stage of the
+   launch video's trajectory graphic. Loaded after style.css, which gives
+   the panels their card and the canvases their square. */
+
+.viz-panel canvas {
+    background: #000000;
+    touch-action: none;          /* let OrbitControls own drag / pinch */
+    cursor: grab;
+}
+.viz-panel canvas:active { cursor: grabbing; }
+
+/* Until its scene is built (js/obj.js builds the panels once the first
+   capture is under way or on screen). */
+.viz-panel.is-pending { position: relative; }
+.viz-panel.is-pending::after {
+    content: "Loading the 3-D view…";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 55%;
+    text-align: center;
+    color: #6b7480;
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+/* No WebGL: a still of the viewer + a one-line note. */
+.viz-fallback { background: #000000; }
+.viz-fallback img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+}
+.viz-fallback .viz-fallback-note {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    color: #9aa3ad;
+    background: #0d0f12;
+}
+
+/* a scrubbing proxy is up: the full capture is on its way */
+.image-wrap { position: relative; }
+.image-wrap.is-proxy::after {
+    content: "preview";
+    position: absolute;
+    right: 10px;                      /* the loading badge has the top-left corner */
+    top: 10px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(20, 24, 32, 0.55);
+    pointer-events: none;
+}
+
+/* the 3-D scenes: same affordance as the room panel -- a hint line and the hand mark */
+.viz-hint {
+    margin: -0.2rem 0 0.55rem;
+    font-size: 0.95rem;            /* one line in the 360 px column */
+    white-space: nowrap;
+    color: var(--muted);
+    text-align: left;
+}
+.viz-panel { position: relative; }
+.viz-panel::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 26px;
+    height: 26px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 width=%2726%27 height=%2726%27><path d=%27M9 11.2V5.4a1.6 1.6 0 0 1 3.2 0v5.2M12.2 10.6V8.4a1.6 1.6 0 0 1 3.2 0v2.6M15.4 11.4v-1a1.6 1.6 0 0 1 3.2 0v5.2c0 3.6-2.4 6-6 6h-1.4c-1.9 0-3.3-.7-4.4-2.1L4 15.5a1.5 1.5 0 0 1 2.3-1.9L9 16.2%27 fill=%27none%27 stroke=%27%232b2f36%27 stroke-width=%271.6%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/></svg>") no-repeat center / contain;
+    opacity: 0.9;
+    pointer-events: none;
+    filter: invert(1) drop-shadow(0 1px 1px rgba(0,0,0,0.6));   /* dark canvas: white hand */
+}

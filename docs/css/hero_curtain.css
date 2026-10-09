@@ -1,0 +1,126 @@
+/* ============================================================
+ *  Dark "curtain" behind the animated title (js/title_anim.js).
+ *  The title renders (media/title/) were lit for the launch video's dark material wall;
+ *  on the light header they read muddy, so the title gets a dark backdrop.
+ *
+ *  One switch: data-curtain on <section id="hero"> in index.html
+ *    "band"  a full-width near-black band behind the title only; the paper title,
+ *            authors and buttons stay on the light header below it
+ *    "wall"  the same band showing the dimmed 500-material wall, like the launch
+ *            video's closing shot (media/title/curtain_wall.webp)
+ *    "dark"  the whole hero dark (light text), running straight into the launch video,
+ *            which sits on the same dark ground; the page is light again below it
+ *    (no attribute)  the original light header
+ *
+ *  The band's height is computed from the title stage: keep --ta-w in step with the
+ *  .title-anim width in title_anim.css (min(590px, 90vw); 92vw on phones), 3.654 = its aspect.
+ *
+ *  curtain_wall.webp: layout_kit/wall_dimmed_16pct_1920x1080.png (teaser elements/title),
+ *  rows 9.5 .. 19 cropped at a column gap to exactly 25 columns (1877 px, so it tiles
+ *  seamlessly with repeat-x), wrap-around Gaussian blur r = 3 px, x 0.72 (darker than the
+ *  video so it does not compete with the unlit letters during the sweep), WebP q 80 (11 KB).
+ * ============================================================ */
+
+/* the curtain colours (top -> bottom); on :root because the launch section (C) uses them too */
+:root {
+    --curtain-top: #0a0b0e;
+    --curtain-bot: #14161a;
+}
+#hero[data-curtain] {
+    --ta-w: min(590px, 90vw);
+    --cur-pad: 2.1rem;                 /* above the title stage */
+    --cur-gap: 1.1rem;                 /* dark room below the stage */
+    --cur-fade: 0.6rem;                /* band -> header: a short soft edge, not a grey smear */
+    --cur-below: 1.15rem;              /* light room between the band and the paper title */
+    --cur-h: calc(var(--cur-pad) + var(--ta-w) / 3.654 + var(--cur-gap));
+}
+@media (max-width: 576px) {
+    #hero[data-curtain] {
+        --ta-w: min(590px, 92vw);
+        --cur-pad: 1.15rem;
+        --cur-gap: 0.7rem;
+        --cur-fade: 0.45rem;
+        --cur-below: 0.75rem;
+    }
+}
+
+#hero[data-curtain] .jumbotron.has-title-anim {
+    position: relative;
+    isolation: isolate;
+    padding-top: var(--cur-pad);
+}
+#hero[data-curtain] .jumbotron > .container { position: relative; z-index: 1; }
+
+/* ---------------- A / B: a band behind the title only ---------------- */
+
+#hero[data-curtain="band"] .jumbotron::before,
+#hero[data-curtain="wall"] .jumbotron::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: calc(var(--cur-h) + var(--cur-fade));
+    pointer-events: none;
+    /* eased (smoothstep) soft edge */
+    -webkit-mask-image: linear-gradient(to bottom, #000 var(--cur-h),
+        rgba(0,0,0,0.84) calc(var(--cur-h) + 0.25 * var(--cur-fade)),
+        rgba(0,0,0,0.5) calc(var(--cur-h) + 0.5 * var(--cur-fade)),
+        rgba(0,0,0,0.16) calc(var(--cur-h) + 0.75 * var(--cur-fade)),
+        transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 var(--cur-h),
+        rgba(0,0,0,0.84) calc(var(--cur-h) + 0.25 * var(--cur-fade)),
+        rgba(0,0,0,0.5) calc(var(--cur-h) + 0.5 * var(--cur-fade)),
+        rgba(0,0,0,0.16) calc(var(--cur-h) + 0.75 * var(--cur-fade)),
+        transparent 100%);
+}
+#hero[data-curtain="band"] .jumbotron::before {
+    background: linear-gradient(to bottom, var(--curtain-top) 0, var(--curtain-bot) 100%);
+}
+#hero[data-curtain="wall"] .jumbotron::before {
+    background:
+        radial-gradient(ellipse 46% 62% at 50% 52%, rgba(6,7,9,0.55), rgba(6,7,9,0) 100%),
+        url("../media/title/curtain_wall.webp?v=1") center top / auto var(--cur-h) repeat-x,
+        #08090b;
+}
+#hero[data-curtain="band"] .title-anim,
+#hero[data-curtain="wall"] .title-anim {
+    margin-bottom: calc(var(--cur-gap) + var(--cur-fade) + var(--cur-below));
+}
+
+/* ---------------- C: a dark hero that runs into the launch video ---------------- */
+
+#hero[data-curtain="dark"] .jumbotron {
+    background: linear-gradient(to bottom, var(--curtain-top) 0, var(--curtain-bot) 100%);
+    border-bottom: 0;
+    border-radius: 0;
+    color: #e4e7eb;
+}
+#hero[data-curtain="dark"] .jumbotron h2 { color: #f2f4f7; }
+#hero[data-curtain="dark"] .jumbotron .subtitle { color: #a3abb5; }
+#hero[data-curtain="dark"] .author-list a { color: #8db3ff; }
+#hero[data-curtain="dark"] .affiliations { color: #98a1ac; }
+#hero[data-curtain="dark"] .btn-pill {
+    background: rgba(255, 255, 255, 0.06);
+    color: #e9ecf0;
+    border-color: rgba(255, 255, 255, 0.17);
+}
+#hero[data-curtain="dark"] .btn-pill:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(51, 103, 214, 0.35);
+}
+/* the launch section keeps its 1100 px column; its dark ground bleeds to the window edges
+   through border-image-outset (ink overflow, so no sideways scroll), then a short soft
+   edge back to the page */
+#hero[data-curtain="dark"] ~ #teaser-video {
+    padding-bottom: 2.4rem;
+    border-image: linear-gradient(to bottom, var(--curtain-bot) calc(100% - 0.6rem),
+        rgba(20, 22, 26, 0.84) calc(100% - 0.45rem), rgba(20, 22, 26, 0.5) calc(100% - 0.3rem),
+        rgba(20, 22, 26, 0.16) calc(100% - 0.15rem), rgba(20, 22, 26, 0) 100%) fill 0 / / 0 100vmax;
+}
+@media (max-width: 576px) {
+    #hero[data-curtain="dark"] ~ #teaser-video { padding-bottom: 1.4rem; }
+}
