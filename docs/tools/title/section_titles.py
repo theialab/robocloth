@@ -29,7 +29,7 @@ def slug(t):
     return re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")
 
 
-TONE_MEAN, TONE_STD = 92.0, 14.0          # every patch is graded to this sRGB band: the word reads as
+TONE_MEAN, TONE_STD = 150.0, 16.0    # candidate D (user's pick): lighter patches, dark outline carries the shape          # every patch is graded to this sRGB band: the word reads as
                                             # one dark shape, the cloth shows as texture, not as colour
 
 
