@@ -310,6 +310,23 @@ section.page-section .section-rule {
     margin-top: 0.1rem;
 }
 
+/* full-ID lists live in a <details>: a heading-styled summary with a chevron */
+.id-fold { margin-top: 2.6rem; }
+.id-fold > summary { list-style: none; cursor: pointer; margin-top: 0; }
+.id-fold > summary::-webkit-details-marker { display: none; }
+.id-fold > summary .fold-chevron { font-size: 0.8rem; color: var(--muted); transition: transform 0.15s ease; }
+.id-fold[open] > summary .fold-chevron { transform: rotate(90deg); }
+.id-fold > summary .split-heading-tail { font-weight: 600; color: var(--brand); }
+
+/* phones: three compact thumbnails per row (two tall cards per row made the preview ~2.4k px) */
+@media (max-width: 576px) {
+    .preview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .material-card { border-radius: 8px; }
+    .material-card .card-body { padding: 0.28rem 0.2rem 0.32rem; font-size: 0.82rem; }
+    .material-card .card-label, .material-card .card-id-word { display: none; }
+    .id-fold { margin-top: 1.8rem; }
+}
+
 /* --------  obj.html (material detail)  -------- */
 /* The viewer shares the main page's language: Jost, the dark hero pills,
  * white cards with a 1 px border and the results cards' soft shadow,

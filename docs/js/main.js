@@ -130,7 +130,7 @@ function buildPreviewCard(entry) {
     const body = document.createElement("div");
     body.className = "card-body";
     body.innerHTML = `
-        <div class="card-id">Material ${entry.id}</div>
+        <div class="card-id"><span class="card-id-word">Material </span>${entry.id}</div>
         <div class="card-label">${entry.split === "test" ? "Test" : "Train"}</div>
     `;
 

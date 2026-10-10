@@ -42,7 +42,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
     <link rel="stylesheet" href="css/room.css?v=9">
-    <link rel="stylesheet" href="css/style.css?v=43">
+    <link rel="stylesheet" href="css/style.css?v=44">
     <link rel="stylesheet" href="css/title_anim.css?v=3">
     <link rel="stylesheet" href="css/hero_curtain.css?v=1">
     <link rel="stylesheet" href="css/results.css?v=7">
@@ -328,18 +328,26 @@
     </h4>
     <div id="test-preview-grid" class="preview-grid"></div>
 
-    <!-- Full ID lists -->
-    <h4 class="split-heading" style="margin-top:3rem">
-        <span class="split-chip train">Train</span>
-        <span class="split-heading-tail">all material IDs</span>
-    </h4>
-    <div id="train-all-list" class="id-pill-list"></div>
+    <!-- Full ID lists: open on wide screens, folded on phones (they are ~2000 px tall there) -->
+    <details class="id-fold" id="id-fold">
+        <summary class="split-heading"><i class="fa-solid fa-chevron-right fold-chevron" aria-hidden="true"></i>
+            <span class="split-heading-tail">All material IDs &mdash; every train and test material, each linked to its viewer</span></summary>
+        <h4 class="split-heading" style="margin-top:1.2rem">
+            <span class="split-chip train">Train</span>
+            <span class="split-heading-tail">all material IDs</span>
+        </h4>
+        <div id="train-all-list" class="id-pill-list"></div>
 
-    <h4 class="split-heading" style="margin-top:2rem">
-        <span class="split-chip test">Test</span>
-        <span class="split-heading-tail">all material IDs</span>
-    </h4>
-    <div id="test-all-list" class="id-pill-list"></div>
+        <h4 class="split-heading" style="margin-top:2rem">
+            <span class="split-chip test">Test</span>
+            <span class="split-heading-tail">all material IDs</span>
+        </h4>
+        <div id="test-all-list" class="id-pill-list"></div>
+    </details>
+    <script>
+        // phones fold the ID lists by default; wider screens keep them open as before
+        (function () { var d = document.getElementById("id-fold"); if (d) d.open = !window.matchMedia("(max-width: 576px)").matches; })();
+    </script>
 </section>
 
 <script>
@@ -578,7 +586,7 @@
 <script src="js/transforms.js?v=35"></script>
 <script src="js/tar_reader.js?v=37"></script>
 <script src="js/hdr_display.js?v=38"></script>
-<script src="js/main.js?v=36"></script>
+<script src="js/main.js?v=37"></script>
 <script src="js/media.js?v=38"></script>
 <script src="js/room_core.js?v=8"></script>
 <script src="js/room_a.js?v=14"></script>
