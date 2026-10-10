@@ -28,6 +28,7 @@ remote `hdr.tar` via HTTP Range requests.
 docs/
 ├── index.html              Landing page (hero + dataset preview grid)
 ├── obj.html                Per-material viewer (sliders + 3D primitives)
+├── results.html            All qualitative comparisons at full resolution (main page keeps the UBO2014 close-up)
 ├── css/
 │   ├── style.css           Page styles (Bootstrap loaded via CDN)
 │   ├── title_anim.css      Animated fabric title (hero)
@@ -58,7 +59,7 @@ docs/
 │   └── robocloth_method_tiles.json   tile rectangles of the method video's last frame
 ├── images/                 Method figures, og_card.jpg, favicons,
 │   ├── thumbs/{id}.jpg     pre-rendered preview thumbnails (tools/export_thumbs.py)
-│   ├── results/            PSNR chart (SVG/PNG) + qualitative comparison tiles
+│   ├── results/            PSNR chart (SVG/PNG); qual/fullres (paper's label-free masters, click-through) + qual/web (1920-px inline)
 │   └── viz/                Camera / LED cut-outs for the 3-D viewer
 ├── data/
 │   ├── manifest.json       Preview-material list (25: 20 train + 5 test)

@@ -265,3 +265,10 @@
     .qual-rowlabels { padding: 0.35rem 0; }
     .qual-card { padding: 0.35rem; }
 }
+
+/* --- results.html (companion page) and the link to it --- */
+.res-more { text-align: center; margin: 1.2rem 0 0.4rem; }
+.results-page { padding-top: 1.2rem; }
+.results-header { margin: 0 1rem 1rem; }
+.results-header h1 { font-size: 1.6rem; font-weight: 600; margin: 0 0 0.25rem; }
+.results-header .subtitle { color: var(--muted); margin: 0; }
