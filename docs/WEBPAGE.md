@@ -28,7 +28,8 @@ remote `hdr.tar` via HTTP Range requests.
 docs/
 ├── index.html              Landing page (hero + dataset preview grid)
 ├── obj.html                Per-material viewer (sliders + 3D primitives)
-├── results.html            All qualitative comparisons at full resolution (main page keeps the UBO2014 close-up)
+├── results.html            All qualitative comparisons at full resolution (main page keeps the UBO2014 close-up);
+│                           per-cell PSNR badges from data/qual_psnr.json via tools/results/qual_psnr.py
 ├── css/
 │   ├── style.css           Page styles (Bootstrap loaded via CDN)
 │   ├── title_anim.css      Animated fabric title (hero)
