@@ -272,22 +272,3 @@
 .results-header { margin: 0 1rem 1rem; }
 .results-header h1 { font-size: 1.6rem; font-weight: 600; margin: 0 0 0.25rem; }
 .results-header .subtitle { color: var(--muted); margin: 0; }
-
-/* per-cell PSNR badges over the qualitative montages (results.html, tools/results/qual_psnr.py) */
-.qual-img { position: relative; }
-.qual-badges { position: absolute; inset: 0.6rem; pointer-events: none; }
-.qual-badges span {
-    position: absolute;
-    transform: translate(0.35em, 0.35em);
-    padding: 0.08em 0.4em;
-    border-radius: 4px;
-    background: rgba(20, 22, 26, 0.74);
-    color: #fff;
-    font-weight: 600;
-    font-size: clamp(0.5rem, 1.05vw, 0.8rem);
-    line-height: 1.45;
-    letter-spacing: 0.01em;
-    white-space: nowrap;
-}
-.qual-badges .best { background: #3367d6; }   /* best of the row: the chart's RoboCloth blue */
-@media (max-width: 820px) { .qual-badges { inset: 0.35rem; } }
