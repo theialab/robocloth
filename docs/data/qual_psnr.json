@@ -1,7 +1,7 @@
 {
  "_source": {
   "ubo2014": "image-space PSNR (dB) of each rendered cell against the GT render, computed with 3DV2027/figures/make_fig4.py (CROP box, GT size, 8-bit sRGB) over /media/raid/cloth/output/BRDF/Qualitative/UBO renders; matches the numbers baked into the paper's close-up figure",
-  "image_space": "per-view PSNR (dB) of the Stage-2 rendering against the captured photograph, from /media/raid/cloth/output/BRDF/Qualitative/Ours_images/psnr_all_materials.json (psnr_by_view, final epoch); null = no run (452 Bonn, 145 PBR) or diverged (314 MERL)"
+  "image_space": "per-view PSNR (dB) of the Stage-2 rendering against the captured photograph, parsed from the result_view_<v>_0_psnr<val>.png filenames of the experiments the figure was built from (Qualitative/Ours_images/psnr_all_materials.json, final epoch; 145 PBR = Ours145_PBR_dense_run_1, 452 Bonn = Ours452_from_Bonn_Grazing-angle_run_1, 314 MERL = Ours314_from_MERL-init-0.1_Grazing-angle_run_2, the runs process_ours_images.py patched in)"
  },
  "ubo2014": {
   "carpet02": {
@@ -124,10 +124,10 @@
     31.59
    ],
    "Bonn": [
-    null,
-    null,
-    null,
-    null
+    36.12,
+    32.55,
+    36.7,
+    30.89
    ],
    "MERL": [
     34.12,
@@ -194,10 +194,10 @@
     23.74
    ],
    "MERL": [
-    null,
-    null,
-    null,
-    null
+    20.18,
+    22.96,
+    19.81,
+    21.59
    ],
    "PBR": [
     20.12,
@@ -232,10 +232,10 @@
     27.12
    ],
    "PBR": [
-    null,
-    null,
-    null,
-    null
+    20.55,
+    25.44,
+    23.12,
+    27.39
    ]
   }
  }

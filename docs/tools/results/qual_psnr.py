@@ -66,12 +66,14 @@ def badges(name):
     assert len(cols) == len(colkeys) and len(rws) == len(rows), (name, len(cols), len(rws))
     out = []
     for r, rk in enumerate(rows):
-        for c, ck in enumerate(colkeys):
-            v = value(src, rk, ck)
+        vals = [value(src, rk, ck) for ck in colkeys]
+        best = max(v for v in vals if v is not None)
+        for c, v in enumerate(vals):
             if v is None:
                 continue
             x0, _ = cols[c]; y0, _ = rws[r]
-            out.append(f'<span style="left:{100*x0:.2f}%;top:{100*y0:.2f}%">{v:.2f}</span>')
+            cls = ' class="best"' if v == best else ""      # best of the row (per material / per view)
+            out.append(f'<span{cls} style="left:{100*x0:.2f}%;top:{100*y0:.2f}%">{v:.2f}</span>')
     return '<div class="qual-badges" aria-hidden="true">' + "".join(out) + "</div>"
 
 

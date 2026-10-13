@@ -289,4 +289,5 @@
     letter-spacing: 0.01em;
     white-space: nowrap;
 }
+.qual-badges .best { background: #3367d6; }   /* best of the row: the chart's RoboCloth blue */
 @media (max-width: 820px) { .qual-badges { inset: 0.35rem; } }
