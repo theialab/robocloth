@@ -9,7 +9,7 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 DEST=${1:-$PWD/DATA_ROOT}
-REPO=koalapenguin/RoboCloth
+REPO=theialab/RoboCloth
 # The released corpus contains numeric material IDs 0..499.  Do not use a
 # shell wildcard here: an unquoted '*' expands to files in the caller's
 # working directory before it ever reaches the Hugging Face include filter.

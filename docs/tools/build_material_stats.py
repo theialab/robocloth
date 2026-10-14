@@ -53,7 +53,7 @@ except ImportError:
     sys.exit(1)
 
 
-HF = "https://huggingface.co/datasets/koalapenguin/RoboCloth/resolve/main"
+HF = "https://huggingface.co/datasets/theialab/RoboCloth/resolve/main"
 
 DEFAULT_IDS = [2, 8, 20, 35, 50, 84, 96, 109, 130, 145, 156, 170, 190,
                220, 249, 309, 350, 400, 428, 483]

@@ -202,7 +202,7 @@ class CiStage1DataPathDryRun(_CiCase):
         calls = self.hf_calls()
         self.assertEqual(len(calls), 1, calls)
         argv = calls[0]
-        self.assertEqual(argv[:2], ["download", "koalapenguin/RoboCloth"])
+        self.assertEqual(argv[:2], ["download", "theialab/RoboCloth"])
         self.assertEqual(argv[argv.index("--repo-type") + 1], "dataset")
         self.assertEqual(argv[argv.index("--local-dir") + 1], str(self.data))
         includes = [argv[i + 1] for i, tok in enumerate(argv) if tok == "--include"]

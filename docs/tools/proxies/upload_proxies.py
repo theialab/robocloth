@@ -8,7 +8,7 @@ batch by batch, as materials finish building.
 A material is uploaded once its meta.json exists (written last by the builder) and its
 index.json carries the "__meta" record; each commit holds --batch materials (3 files each).
 State: <out>/_logs/uploaded.json.  Needs a Hugging Face login with write access
-(hf auth login as koalapenguin).
+(hf auth login with write access to the theialab organization).
 """
 import argparse
 import json
@@ -19,7 +19,7 @@ from pathlib import Path
 
 from huggingface_hub import CommitOperationAdd, HfApi
 
-REPO = "koalapenguin/RoboCloth-assets"
+REPO = "theialab/RoboCloth-assets"
 PREFIX = "web/proxies"
 FILES = ("proxy.tar", "index.json", "meta.json")
 HERE = Path(__file__).resolve().parent

@@ -6,7 +6,7 @@ Understands exactly the invocation scripts/download_dataset_stage1.sh issues,
     hf download <repo> --repo-type dataset --include <glob> [--include ...] --local-dir <dest>
 
 and materialises a tiny but schema-correct copy of the parts of the
-koalapenguin/RoboCloth layout that match the include globs:
+theialab/RoboCloth layout that match the include globs:
 
     globals/{emitter_calibration.json, camera_factor.json, sample_size.json,
              training_list_500.txt, test_list_500.txt}
@@ -33,7 +33,7 @@ import sys
 
 import numpy as np
 
-REPO = "koalapenguin/RoboCloth"
+REPO = "theialab/RoboCloth"
 MATERIAL_FILES = ["observations_structured.npz", "scan_log.json", "rotated_camera.json", "point_metadata.json"]
 GLOBAL_FILES = ["emitter_calibration.json", "camera_factor.json", "sample_size.json",
                 "training_list_500.txt", "test_list_500.txt"]

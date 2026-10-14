@@ -27,7 +27,7 @@ export OUTPUT_ROOT=/absolute/path/to/robocloth-output
 bash scripts/download_material.sh 145 "$DATA_ROOT"
 
 # pretrained stage-1 decoder (RoboCloth prior, ~2 GB)
-hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+hf download theialab/RoboCloth-assets --repo-type dataset \
     --include "checkpoints/stage1/Ours.ckpt" --local-dir "$CKPT_DIR"
 ```
 

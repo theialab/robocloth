@@ -54,10 +54,10 @@ export ROBOCLOTH_ASSETS=/absolute/path/to/robocloth-assets
 <!-- PUBLIC-ONLY:BEGIN -->
 ```bash
 # the 13 teaser checkpoints only (Ours_epoch*.ckpt, 15.1 GB) ...
-hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+hf download theialab/RoboCloth-assets --repo-type dataset \
     --include "checkpoints/stage2/RoboCloth/*/Ours_epoch*.ckpt" --local-dir "$ROBOCLOTH_CKPTS"
 # ... and the room scene, meshes and texture (37 files, 122 MB)
-hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+hf download theialab/RoboCloth-assets --repo-type dataset \
     --include "render_assets/teaser_room/*" --local-dir "$ROBOCLOTH_ASSETS"
 ```
 <!-- PUBLIC-ONLY:END -->

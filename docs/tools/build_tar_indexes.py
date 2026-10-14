@@ -34,7 +34,7 @@ except ImportError:
     sys.exit(1)
 
 
-HF_BASE = "https://huggingface.co/datasets/koalapenguin/RoboCloth/resolve/main"
+HF_BASE = "https://huggingface.co/datasets/theialab/RoboCloth/resolve/main"
 
 DEFAULT_SAMPLE_IDS = [156, 249, 309, 428, 483]
 DEFAULT_FULL_IDS   = [2, 8, 20, 35, 50, 84, 96, 109, 130, 145, 170, 190,

@@ -2,7 +2,7 @@
 
 Static HTML/CSS/JS site (served by GitHub Pages from this `docs/` folder at
 <https://theialab.github.io/robocloth/>) that previews the
-[koalapenguin/RoboCloth](https://huggingface.co/datasets/koalapenguin/RoboCloth)
+[theialab/RoboCloth](https://huggingface.co/datasets/theialab/RoboCloth)
 dataset directly from Hugging Face — no server-side code, no rebuilt assets.
 
 ## Quick start
@@ -117,7 +117,7 @@ All page videos are small web encodes committed under `media/` (H.264 High,
 yuv420p, `+faststart`; every file < 10 MB). Only the launch video loads up
 front; the others use `preload="metadata"` and play while in view
 (`js/media.js`). The full-resolution originals stay on Hugging Face
-[`koalapenguin/RoboCloth-assets`](https://huggingface.co/datasets/koalapenguin/RoboCloth-assets)
+[`theialab/RoboCloth-assets`](https://huggingface.co/datasets/theialab/RoboCloth-assets)
 and are linked under each video.
 
 | file | source | encode |

@@ -35,7 +35,7 @@ from io import BytesIO
 from pathlib import Path
 
 
-HF_BASE = "https://huggingface.co/datasets/koalapenguin/RoboCloth/resolve/main"
+HF_BASE = "https://huggingface.co/datasets/theialab/RoboCloth/resolve/main"
 
 
 # --------------------------------------------------------------------------

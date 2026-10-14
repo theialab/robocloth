@@ -2,7 +2,7 @@
 
 Every table and figure, with the command that reproduces it. Notation:
 `DATA_ROOT` = RoboCloth capture data (download scripts in `scripts/`),
-`CKPTS` = the [koalapenguin/RoboCloth-assets](https://huggingface.co/datasets/koalapenguin/RoboCloth-assets)
+`CKPTS` = the [theialab/RoboCloth-assets](https://huggingface.co/datasets/theialab/RoboCloth-assets)
 bundle (checkpoints and render assets — the README calls the same directory
 `ROBOCLOTH_CKPTS`). The comparison datasets (MERL, UBO2014, Bonn) are **not**
 mirrored on Hugging Face; download them from their original sources with the
@@ -40,7 +40,7 @@ export OUTPUT_ROOT=/absolute/path/to/repro-output
 
 # Table 3, top block: the released stage-2 checkpoints + the dense capture
 # data of the five test materials (~9 GB per material)
-hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+hf download theialab/RoboCloth-assets --repo-type dataset \
     --include "checkpoints/stage2/RoboCloth/*" --local-dir "$CKPTS"
 for m in 226 314 370 145 452; do bash scripts/download_material.sh "$m" "$DATA_ROOT"; done
 DATA_ROOT="$DATA_ROOT" OUTPUT_ROOT="$OUTPUT_ROOT" \
@@ -48,7 +48,7 @@ CKPT_ROOT="$CKPTS/checkpoints/stage2/RoboCloth" bash scripts/run_table_ours.sh
 
 # Table 2: the UBO2014 checkpoints from the bundle, the BTFs from the BTFDBB
 export EXT_ROOT=/absolute/path/to/comparison-datasets
-hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+hf download theialab/RoboCloth-assets --repo-type dataset \
     --include "checkpoints/stage2/UBO/*" --local-dir "$CKPTS"
 bash scripts/comparisons/download_ubo2014.sh "$EXT_ROOT"
 DATA_ROOT="$EXT_ROOT/UBO2014" OUTPUT_ROOT="$OUTPUT_ROOT" \

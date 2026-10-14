@@ -10,7 +10,7 @@
 set -euo pipefail
 ID=${1:?usage: download_material.sh <material_id> [DATA_ROOT]}
 DEST=${2:-$PWD/DATA_ROOT}
-REPO=koalapenguin/RoboCloth
+REPO=theialab/RoboCloth
 
 if [[ ! $ID =~ ^[0-9]+$ ]]; then
     echo "[download_material] ERROR: material_id must be numeric: $ID" >&2

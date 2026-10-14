@@ -114,13 +114,13 @@ files above is missing (exit 2, every problem listed).
 
 ## 4. Released checkpoints
 
-The bundle [koalapenguin/RoboCloth-assets](https://huggingface.co/datasets/koalapenguin/RoboCloth-assets)
+The bundle [theialab/RoboCloth-assets](https://huggingface.co/datasets/theialab/RoboCloth-assets)
 contains exactly these Bonn checkpoints (layout
 `checkpoints/stage2/Bonn/<mat>/<MODEL>_epoch<N>.ckpt`; the `Ours` file name
 is the paper's **RoboCloth** column):
 
 ```bash
-hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+hf download theialab/RoboCloth-assets --repo-type dataset \
     --include "checkpoints/stage2/Bonn/*" --include "checkpoints/stage1/*" --local-dir "$CKPTS"
 ```
 

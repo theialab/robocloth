@@ -9,7 +9,7 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 DEST=${1:-$PWD/DATA_ROOT}
-REPO=koalapenguin/RoboCloth
+REPO=theialab/RoboCloth
 if [[ -n ${ROBOCLOTH_MATERIALS:-} ]]; then
     read -r -a IDS <<< "$ROBOCLOTH_MATERIALS"
 else

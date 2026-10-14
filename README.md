@@ -9,8 +9,8 @@ Material Dataset for Neural Reflectance Reconstruction*.
 
 <!-- PUBLIC-ONLY:BEGIN -->
 [![Project page](https://img.shields.io/badge/Project-Page-1f6feb)](https://theialab.github.io/robocloth/)
-[![Dataset on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-RoboCloth-ffb000)](https://huggingface.co/datasets/koalapenguin/RoboCloth)
-[![Checkpoints and assets on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Checkpoints%20%26%20assets-RoboCloth--assets-ffb000)](https://huggingface.co/datasets/koalapenguin/RoboCloth-assets)
+[![Dataset on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-RoboCloth-ffb000)](https://huggingface.co/datasets/theialab/RoboCloth)
+[![Checkpoints and assets on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Checkpoints%20%26%20assets-RoboCloth--assets-ffb000)](https://huggingface.co/datasets/theialab/RoboCloth-assets)
 
 [Zhen (Colin) Li](https://colinzhenli.github.io)<sup>1\*</sup>,
 [Haoran Qin](https://peppasaur.github.io/)<sup>2\*</sup>,
@@ -55,9 +55,9 @@ own scene**. The other entry points each have their own guide:
 | Understand how the dataset was captured (calibration + reconstruction) | [docs/capture_pipeline.md](docs/capture_pipeline.md) |
 
 Released data: capture dataset at
-[koalapenguin/RoboCloth](https://huggingface.co/datasets/koalapenguin/RoboCloth),
+[theialab/RoboCloth](https://huggingface.co/datasets/theialab/RoboCloth),
 checkpoints + render assets at
-[koalapenguin/RoboCloth-assets](https://huggingface.co/datasets/koalapenguin/RoboCloth-assets).
+[theialab/RoboCloth-assets](https://huggingface.co/datasets/theialab/RoboCloth-assets).
 
 ## Render our materials on your scene
 
@@ -78,7 +78,7 @@ not change what they resolve to.
 ```bash
 export ROBOCLOTH_REPO=/absolute/path/to/RoboCloth
 export ROBOCLOTH_CKPTS=/absolute/path/to/robocloth-checkpoints
-hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+hf download theialab/RoboCloth-assets --repo-type dataset \
     --include "checkpoints/stage2/RoboCloth/*" --local-dir "$ROBOCLOTH_CKPTS"
 ```
 
@@ -134,7 +134,7 @@ Cloth draped over a bar under an environment map:
 
 ```bash
 export ROBOCLOTH_ASSETS=/absolute/path/to/robocloth-assets
-hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+hf download theialab/RoboCloth-assets --repo-type dataset \
     --include "render_assets/cloth_on_bar/*" --local-dir "$ROBOCLOTH_ASSETS"
 cd "$ROBOCLOTH_REPO/rendering"
 MESH_DIR="$ROBOCLOTH_ASSETS/render_assets/cloth_on_bar" \
@@ -147,7 +147,7 @@ The paper teaser (a room where sofas, pillows, carpet and curtains are all
 our reconstructed cloths):
 
 ```bash
-hf download koalapenguin/RoboCloth-assets --repo-type dataset \
+hf download theialab/RoboCloth-assets --repo-type dataset \
     --include "render_assets/teaser_room/*" --local-dir "$ROBOCLOTH_ASSETS"
 cd "$ROBOCLOTH_REPO/rendering"
 TEASER_SCENE_ROOT="$ROBOCLOTH_ASSETS/render_assets/teaser_room" \
@@ -206,5 +206,5 @@ Machine-readable metadata: [CITATION.cff](CITATION.cff).
 ## License
 
 Code: Apache-2.0 (see [LICENSE](LICENSE)). Dataset
-(koalapenguin/RoboCloth): CC BY 4.0. Checkpoints, scenes and media
-(koalapenguin/RoboCloth-assets): CC BY 4.0.
+(theialab/RoboCloth): CC BY 4.0. Checkpoints, scenes and media
+(theialab/RoboCloth-assets): CC BY 4.0.

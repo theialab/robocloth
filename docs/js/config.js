@@ -6,7 +6,7 @@
  */
 
 window.CONFIG = (() => {
-    const HF_REPO = "koalapenguin/RoboCloth";
+    const HF_REPO = "theialab/RoboCloth";
 
     // resolve URL for a file in the HF dataset (Range-friendly through redirects)
     const hfResolve = (path) =>
@@ -16,7 +16,7 @@ window.CONFIG = (() => {
     // one ustar of 640 px sqrt-encoded WebPs per material + its index, hosted in the
     // assets repo. For a local preview the base can be pointed at a mounted copy with
     // ?proxybase=/proxies/ (remembered for the tab).
-    const ASSETS_REPO = "koalapenguin/RoboCloth-assets";
+    const ASSETS_REPO = "theialab/RoboCloth-assets";
     let proxyBase = `https://huggingface.co/datasets/${ASSETS_REPO}/resolve/main/web/proxies/`;
     try {
         const q = new URLSearchParams(location.search).get("proxybase");

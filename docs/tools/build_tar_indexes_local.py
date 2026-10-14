@@ -34,7 +34,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-REPO = "koalapenguin/RoboCloth"
+REPO = "theialab/RoboCloth"
 HF = "https://huggingface.co"
 LOCAL = Path("/media/raid/cloth/Dataset_submission")
 HEADER = 1536          # pax header + pax data + ustar header
