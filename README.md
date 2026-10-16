@@ -13,7 +13,7 @@ Material Dataset for Neural Reflectance Reconstruction*.
 [![Checkpoints and assets on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Checkpoints%20%26%20assets-RoboCloth--assets-ffb000)](https://huggingface.co/datasets/theialab/RoboCloth-assets)
 
 [Zhen (Colin) Li](https://colinzhenli.github.io)<sup>1\*</sup>,
-[Haoran Qin](https://peppasaur.github.io/)<sup>2\*</sup>,
+[Haoran Qin](https://peppasaur.github.io/)<sup>1,2\*†</sup>,
 [Francesco Di Sario](https://scholar.google.com/citations?user=wjOMl_8AAAAJ)<sup>3,1</sup>,
 [Daniel Rebain](http://drebain.com/)<sup>4,5</sup>,
 [Andrea Tagliasacchi](https://taiya.github.io)<sup>1,5,6</sup>
@@ -21,7 +21,7 @@ Material Dataset for Neural Reflectance Reconstruction*.
 <sup>1</sup> Simon Fraser University &nbsp;&nbsp; <sup>2</sup> Westlake University &nbsp;&nbsp; <sup>3</sup> University of Torino &nbsp;&nbsp;
 <sup>4</sup> University of British Columbia &nbsp;&nbsp; <sup>5</sup> Wayve Labs &nbsp;&nbsp; <sup>6</sup> University of Toronto
 
-<sup>\*</sup> Co-first authors
+<sup>\*</sup> Co-first authors &nbsp;&nbsp; <sup>†</sup> Work done during an internship at Simon Fraser University
 
 Project page: <https://theialab.github.io/robocloth/>
 <!-- PUBLIC-ONLY:END -->
