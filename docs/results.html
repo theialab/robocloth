@@ -57,26 +57,14 @@
 
     <h4 class="res-subtitle" id="ubo2014">UBO2014 &mdash; all 12 held-out materials</h4>
     <figure class="res-figure qual-fig">
-        <h5 class="qual-title">Materials 1&ndash;6</h5>
-        <div class="qual-table" style="--cols:5;--rows:6">
+        <div class="qual-table" style="--cols:5;--rows:12">
             <div class="qual-head"><span>GT</span><span class="is-ours">RoboCloth</span><span>UBOFAB19</span><span>MERL</span><span>PBR</span></div>
-            <div class="qual-rowlabels"><span>carpet02</span><span>carpet07</span><span>carpet09</span><span>carpet12</span><span>fabric02</span><span>fabric04</span></div>
-            <a class="res-card qual-card qual-img" href="images/results/qual/fullres/ubo2014_1-6.jpg?v=2" target="_blank" rel="noopener" title="Open at full resolution">
-                <img src="images/results/qual/web/ubo2014_1-6.jpg?v=2" width="1920" height="2332" loading="lazy" decoding="async" alt="">
+            <div class="qual-rowlabels"><span>carpet02</span><span>carpet07</span><span>carpet09</span><span>carpet12</span><span>fabric02</span><span>fabric04</span><span>fabric09</span><span>fabric11</span><span>felt01</span><span>felt03</span><span>felt05</span><span>felt10</span></div>
+            <a class="res-card qual-card qual-img" href="images/results/qual/fullres/ubo2014_all12.jpg?v=1" target="_blank" rel="noopener" title="Open at full resolution">
+                <img src="images/results/qual/web/ubo2014_all12.jpg?v=1" width="1920" height="4657" loading="lazy" decoding="async" alt="">
             </a>
         </div>
-        <figcaption>All 12 held-out UBO2014 materials, rendered in the same scene as the close-up on the main page. Across all 12, the RoboCloth decoder most consistently matches the GT reference in both colour and weave texture.</figcaption>
-    </figure>
-    <figure class="res-figure qual-fig">
-        <h5 class="qual-title">Materials 7&ndash;12</h5>
-        <div class="qual-table" style="--cols:5;--rows:6">
-            <div class="qual-head"><span>GT</span><span class="is-ours">RoboCloth</span><span>UBOFAB19</span><span>MERL</span><span>PBR</span></div>
-            <div class="qual-rowlabels"><span>fabric09</span><span>fabric11</span><span>felt01</span><span>felt03</span><span>felt05</span><span>felt10</span></div>
-            <a class="res-card qual-card qual-img" href="images/results/qual/fullres/ubo2014_7-12.jpg?v=2" target="_blank" rel="noopener" title="Open at full resolution">
-                <img src="images/results/qual/web/ubo2014_7-12.jpg?v=2" width="1920" height="2332" loading="lazy" decoding="async" alt="">
-            </a>
-        </div>
-        <figcaption>Materials 7&ndash;12; same columns and scene as above.</figcaption>
+        <figcaption>Rendered in the same scene as the close-up on the main page. Across all 12 materials, the RoboCloth decoder most consistently matches the GT reference in both colour and weave texture.</figcaption>
     </figure>
 
 
@@ -85,7 +73,9 @@
     <p class="lead-text res-setup">
         We also reconstruct held-out materials from our own test set (in-domain) and from the UBOFAB19 test set
         (cross-dataset): for each material the decoder is frozen and a dense latent grid is optimized on a subset of the
-        captured views, then relit in the same scene.
+        captured views, then relit in the same scene. There is no GT column here: both datasets measure only the flat
+        sample in their capture rig, so there is no measured reference for the draped cloth (UBO2014, by contrast, is a
+        full BTF that can itself be rendered).
     </p>
 
     <figure class="res-figure qual-fig">
@@ -97,7 +87,7 @@
                 <img src="images/results/qual/web/robocloth_test.jpg" width="1920" height="2428" loading="lazy" decoding="async" alt="">
             </a>
         </div>
-        <figcaption>No ground-truth render exists for a captured material. The RoboCloth-trained decoder recovers the sharpest and most faithful texture and colour; all four reconstructions render at high visual quality on the mesh, and the image-space comparison below shows that ours is nonetheless the most faithful to the photographs.</figcaption>
+        <figcaption>The RoboCloth-trained decoder recovers the sharpest and most faithful texture and colour; all four reconstructions render at high visual quality on the mesh, and the image-space comparison below shows that ours is nonetheless the most faithful to the photographs.</figcaption>
         <p class="qual-render"><span class="note-label">Rendering</span>path traced at 2048&times;2048, 512&nbsp;spp, same scene and environment map.</p>
     </figure>
     <figure class="res-figure qual-fig">
