@@ -194,10 +194,11 @@ listed in the
 If you use this code, the dataset or the checkpoints, please cite:
 
 ```bibtex
-@misc{li2026robocloth,
-  title  = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
-  author = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
-  year   = {2026}
+@article{li2026robocloth,
+  title   = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
+  author  = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
+  journal = {arXiv preprint arXiv:2610.21090},
+  year    = {2026}
 }
 ```
 

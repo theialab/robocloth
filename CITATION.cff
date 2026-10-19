@@ -35,7 +35,10 @@ abstract: >-
 url: "https://theialab.github.io/robocloth/"
 repository-code: "https://github.com/theialab/robocloth"
 preferred-citation:
-  type: generic
+  type: article
+  journal: "arXiv preprint arXiv:2610.21090"
+  doi: "10.48550/arXiv.2610.21090"
+  url: "https://arxiv.org/abs/2610.21090"
   title: "RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction"
   authors:
     - family-names: "Li"

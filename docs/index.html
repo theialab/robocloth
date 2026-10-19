@@ -27,11 +27,11 @@
     <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png?v=2">
 
     <script>
-        // Maintainer: put the arXiv URL here once the paper is public, e.g.
-        //   var PAPER_URL = "https://arxiv.org/abs/27xx.xxxxx";
-        // While it is empty the "Paper" button stays hidden; it appears automatically once set.
-        var PAPER_URL = "";
-        var ARXIV_URL = "";       // e.g. "https://arxiv.org/abs/27xx.xxxxx"; the pills stay dimmed while empty
+        // Maintainer: the "arXiv" pill opens the abstract page, the "Paper" pill the PDF
+        // hosted with the page (docs/resources/paper.pdf; replace it when the paper changes).
+        // An empty value dims the pill.
+        var PAPER_URL = "resources/paper.pdf";
+        var ARXIV_URL = "https://arxiv.org/abs/2610.21090";
     </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css">
     <!-- Type: Jost (as powerfoam.github.io), swapped in over the system sans while it loads. -->
@@ -564,10 +564,11 @@
 <section id="citation" class="page-section">
     <h3 class="cloth-title"><img src="images/titles/citation.png?v=3" alt="" width="425" height="94" decoding="async"><span class="sr-only">Citation</span></h3>
     <div class="section-rule"></div>
-    <pre class="citation-block">@misc{li2026robocloth,
-  title  = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
-  author = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
-  year   = {2026}
+    <pre class="citation-block">@article{li2026robocloth,
+  title   = {RoboCloth: A Large-Scale Real Cloth Material Dataset for Neural Reflectance Reconstruction},
+  author  = {Li, Zhen and Qin, Haoran and Di Sario, Francesco and Rebain, Daniel and Tagliasacchi, Andrea},
+  journal = {arXiv preprint arXiv:2610.21090},
+  year    = {2026}
 }</pre>
 </section>
 
