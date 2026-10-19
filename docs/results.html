@@ -51,29 +51,29 @@
         Same protocol as the paper &mdash; the decoder, renderer and Stage&nbsp;2 fitting are fixed and only the
         Stage&nbsp;1 training data changes. Every recovered material is relit in a common scene: the same cloth mesh
         draped over a bar, with identical UV tiling, lighting and camera for every method, so any visible difference is
-        due solely to the learned material. Columns are the decoder trained on <b>RoboCloth</b>, <b>UBOFAB19</b> or
-        <b>MERL</b>, the analytic <b>PBR</b> fit, and the <b>ground truth</b> where one exists.
+        due solely to the learned material. Columns, left to right: the <b>ground truth</b> where one exists, the decoder
+        trained on <b>RoboCloth</b>, <b>UBOFAB19</b> or <b>MERL</b>, and the analytic <b>PBR</b> fit.
     </p>
 
     <h4 class="res-subtitle" id="ubo2014">UBO2014 &mdash; all 12 held-out materials</h4>
     <figure class="res-figure qual-fig">
         <h5 class="qual-title">Materials 1&ndash;6</h5>
         <div class="qual-table" style="--cols:5;--rows:6">
-            <div class="qual-head"><span>UBOFAB19</span><span>MERL</span><span>PBR</span><span class="is-ours">RoboCloth</span><span>GT</span></div>
+            <div class="qual-head"><span>GT</span><span class="is-ours">RoboCloth</span><span>UBOFAB19</span><span>MERL</span><span>PBR</span></div>
             <div class="qual-rowlabels"><span>carpet02</span><span>carpet07</span><span>carpet09</span><span>carpet12</span><span>fabric02</span><span>fabric04</span></div>
-            <a class="res-card qual-card qual-img" href="images/results/qual/fullres/ubo2014_1-6.jpg" target="_blank" rel="noopener" title="Open at full resolution">
-                <img src="images/results/qual/web/ubo2014_1-6.jpg" width="1920" height="2332" loading="lazy" decoding="async" alt="">
+            <a class="res-card qual-card qual-img" href="images/results/qual/fullres/ubo2014_1-6.jpg?v=2" target="_blank" rel="noopener" title="Open at full resolution">
+                <img src="images/results/qual/web/ubo2014_1-6.jpg?v=2" width="1920" height="2332" loading="lazy" decoding="async" alt="">
             </a>
         </div>
-        <figcaption>Extends the close-up to every held-out UBO2014 material. Across all 12, the RoboCloth decoder most consistently matches the GT reference in both colour and weave texture.</figcaption>
+        <figcaption>All 12 held-out UBO2014 materials, rendered in the same scene as the close-up on the main page. Across all 12, the RoboCloth decoder most consistently matches the GT reference in both colour and weave texture.</figcaption>
     </figure>
     <figure class="res-figure qual-fig">
         <h5 class="qual-title">Materials 7&ndash;12</h5>
         <div class="qual-table" style="--cols:5;--rows:6">
-            <div class="qual-head"><span>UBOFAB19</span><span>MERL</span><span>PBR</span><span class="is-ours">RoboCloth</span><span>GT</span></div>
+            <div class="qual-head"><span>GT</span><span class="is-ours">RoboCloth</span><span>UBOFAB19</span><span>MERL</span><span>PBR</span></div>
             <div class="qual-rowlabels"><span>fabric09</span><span>fabric11</span><span>felt01</span><span>felt03</span><span>felt05</span><span>felt10</span></div>
-            <a class="res-card qual-card qual-img" href="images/results/qual/fullres/ubo2014_7-12.jpg" target="_blank" rel="noopener" title="Open at full resolution">
-                <img src="images/results/qual/web/ubo2014_7-12.jpg" width="1920" height="2332" loading="lazy" decoding="async" alt="">
+            <a class="res-card qual-card qual-img" href="images/results/qual/fullres/ubo2014_7-12.jpg?v=2" target="_blank" rel="noopener" title="Open at full resolution">
+                <img src="images/results/qual/web/ubo2014_7-12.jpg?v=2" width="1920" height="2332" loading="lazy" decoding="async" alt="">
             </a>
         </div>
         <figcaption>Materials 7&ndash;12; same columns and scene as above.</figcaption>
