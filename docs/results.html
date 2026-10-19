@@ -69,14 +69,27 @@
 
 
 
-    <h4 class="res-subtitle" id="test-sets">RoboCloth and UBOFAB19 test sets</h4>
+    <h4 class="res-subtitle" id="test-sets">UBOFAB19 and RoboCloth test sets</h4>
     <p class="lead-text res-setup">
-        We also reconstruct held-out materials from our own test set (in-domain) and from the UBOFAB19 test set
-        (cross-dataset): for each material the decoder is frozen and a dense latent grid is optimized on a subset of the
+        We also reconstruct held-out materials from the UBOFAB19 test set (cross-dataset) and from our own test set
+        (in-domain): for each material the decoder is frozen and a dense latent grid is optimized on a subset of the
         captured views, then relit in the same scene. There is no GT column here: both datasets measure only the flat
         sample in their capture rig, so there is no measured reference for the draped cloth (UBO2014, by contrast, is a
         full BTF that can itself be rendered).
     </p>
+
+    <figure class="res-figure qual-fig">
+        <h5 class="qual-title">UBOFAB19 test set &mdash; five held-out materials</h5>
+        <div class="qual-table" style="--cols:4;--rows:5">
+            <div class="qual-head"><span class="is-ours">RoboCloth</span><span>UBOFAB19</span><span>MERL</span><span>PBR</span></div>
+            <div class="qual-rowlabels"><span>318</span><span>377</span><span>32</span><span>226</span><span>37</span></div>
+            <a class="res-card qual-card qual-img" href="images/results/qual/fullres/ubofab19_test.jpg" target="_blank" rel="noopener" title="Open at full resolution">
+                <img src="images/results/qual/web/ubofab19_test.jpg" width="1920" height="2428" loading="lazy" decoding="async" alt="">
+            </a>
+        </div>
+        <figcaption>On UBOFAB19&rsquo;s own test distribution the UBOFAB19-trained decoder is strongest, with the RoboCloth decoder a close second; both clearly outperform the MERL-trained decoder and the PBR baseline.</figcaption>
+        <p class="qual-render"><span class="note-label">Rendering</span>path traced at 2048&times;2048, 512&nbsp;spp, same scene and environment map.</p>
+    </figure>
 
     <figure class="res-figure qual-fig">
         <h5 class="qual-title">RoboCloth test set &mdash; five held-out materials</h5>
@@ -88,18 +101,6 @@
             </a>
         </div>
         <figcaption>The RoboCloth-trained decoder recovers the sharpest and most faithful texture and colour; all four reconstructions render at high visual quality on the mesh, and the image-space comparison below shows that ours is nonetheless the most faithful to the photographs.</figcaption>
-        <p class="qual-render"><span class="note-label">Rendering</span>path traced at 2048&times;2048, 512&nbsp;spp, same scene and environment map.</p>
-    </figure>
-    <figure class="res-figure qual-fig">
-        <h5 class="qual-title">UBOFAB19 test set &mdash; five held-out materials</h5>
-        <div class="qual-table" style="--cols:4;--rows:5">
-            <div class="qual-head"><span class="is-ours">RoboCloth</span><span>UBOFAB19</span><span>MERL</span><span>PBR</span></div>
-            <div class="qual-rowlabels"><span>318</span><span>377</span><span>32</span><span>226</span><span>37</span></div>
-            <a class="res-card qual-card qual-img" href="images/results/qual/fullres/ubofab19_test.jpg" target="_blank" rel="noopener" title="Open at full resolution">
-                <img src="images/results/qual/web/ubofab19_test.jpg" width="1920" height="2428" loading="lazy" decoding="async" alt="">
-            </a>
-        </div>
-        <figcaption>On UBOFAB19&rsquo;s own test distribution the UBOFAB19-trained decoder is strongest, with the RoboCloth decoder a close second; both clearly outperform the MERL-trained decoder and the PBR baseline.</figcaption>
         <p class="qual-render"><span class="note-label">Rendering</span>path traced at 2048&times;2048, 512&nbsp;spp, same scene and environment map.</p>
     </figure>
 
